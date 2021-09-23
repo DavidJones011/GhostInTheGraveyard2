@@ -9,19 +9,35 @@
 #include "Widgets/Views/STableRow.h"
 #include "Widgets/Views/STableViewBase.h"
 #include "Widgets/Views/STableRow.h"
+#include "EditorMode/AIPointContextEdModeToolkit.h"
+#include "Framework/MultiBox/MultiBoxBuilder.h"
+#include "Widgets/SOverlay.h"
+#include "Classes/EditorStyleSettings.h"
 #include "SlateBasics.h"
 
+#define LOCTEXT_NAMESPACE "AIPointContextEditor"
+
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
-void SAIPointContextEdModeWidget::Construct(const FArguments& InArgs)
+void SAIPointContextEdModeWidget::Construct(const FArguments& InArgs, TSharedRef<FAIPointContextEdModeToolkit> InParentToolkit)
 {
+	ParentToolkit = &InParentToolkit.Get();
 	TSharedPtr<SSlider> SphereRadiusSlider;
 	TSharedPtr<SSlider> SearchPointSpreadSlider;
+
+	TSharedRef<FUICommandList> CommandList = InParentToolkit->GetToolkitCommands();
+
+	FToolBarBuilder ModeSwitchButtons(CommandList, FMultiBoxCustomization::None);
+	{
+//		ModeSwitchButtons.AddToolBarButton(FAIPointContextEditorCommands::Get().AddPoint, NAME_None, LOCTEXT("Add Point", "Add"), LOCTEXT("AddPoint.Tooltip", "Adds a point"));
+// 		ModeSwitchButtons.AddToolBarButton(FLandscapeEditorCommands::Get().SculptMode, NAME_None, LOCTEXT("Mode.Sculpt", "Sculpt"), LOCTEXT("Mode.Sculpt.Tooltip", "Contains tools that modify the shape of a landscape"));
+// 		ModeSwitchButtons.AddToolBarButton(FLandscapeEditorCommands::Get().PaintMode, NAME_None, LOCTEXT("Mode.Paint", "Paint"), LOCTEXT("Mode.Paint.Tooltip", "Contains tools that paint materials on to a landscape"));
+	}
 
 	FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	FDetailsViewArgs DetailsViewArgs(false, false, false, FDetailsViewArgs::HideNameArea);
 
 	DetailsPanel = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
-	DetailsPanel->SetIsPropertyVisibleDelegate(FIsPropertyVisible::CreateSP(this, &SAIPointContextEdModeWidget::GetIsPropertyVisible));
+	//DetailsPanel->SetIsPropertyVisibleDelegate(FIsPropertyVisible::CreateSP(this, &SAIPointContextEdModeWidget::GetIsPropertyVisible));
 
 	FAIPointContextEdMode* EdMode = GetEdMode();
 	if (EdMode)
@@ -29,72 +45,43 @@ void SAIPointContextEdModeWidget::Construct(const FArguments& InArgs)
 		DetailsPanel->SetObject((UObject*)EdMode->UISettings);
 	}
 
-	//TSharedPtr<SNumericEntryBox<float>> SearchPointSpreadBox;
+	//AddOptions.Add(MakeShareable(new FString("Search Point")));
+	//AddOptions.Add(MakeShareable(new FString("Sound Transfer Point")));
+	//AddOptions.Add(MakeShareable(new FString("Patrol Point")));
 
-	AddOptions.Add(MakeShareable(new FString("Search Point")));
-	AddOptions.Add(MakeShareable(new FString("Sound Transfer Point")));
-	AddOptions.Add(MakeShareable(new FString("Patrol Point")));
-	//TSharedPtr<SExpanderArrow> Arrow = SNew(SExpanderArrow, FloatTableRow);
-
-	TSharedPtr<STableViewBase> ViewBase;
 
 	ChildSlot
 	[
-		SNew(SScrollBox)
-		+ SScrollBox::Slot().VAlign(VAlign_Top).Padding(5.0f)
-		[		
+// 		SNew(SVerticalBox)
+// 		+ SVerticalBox::Slot()
+// 		.AutoHeight()
+// 		.Padding(0, 0, 0, 5)
+// 		[
+// 			SAssignNew(Error, SErrorText)
+// 		]
+		SNew(SVerticalBox)
+		+ SVerticalBox::Slot()
+		.Padding(0)
+		[
 			SNew(SVerticalBox)
-			+ SVerticalBox::Slot().AutoHeight().Padding(0.0F, 5.0F, 0.0F, 0.0F)
+			.IsEnabled(this, &SAIPointContextEdModeWidget::GetAIPointContextEditorEnabled)
+			+ SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(4, 0, 4, 5)
 			[
- 				SNew(STextBlock)
- 				.Text(FText::FromString(TEXT("This is a editor mode example.")))
-			]
-			+ SVerticalBox::Slot().AutoHeight().Padding(0.0F, 5.0F, 0.0F, 0.0F)
-			[
-				SNew(SHorizontalBox)
-				+ SHorizontalBox::Slot().AutoWidth().Padding(2, 0, 0, 0).VAlign(VAlign_Center)
+				SNew(SOverlay)
+				+ SOverlay::Slot()
 				[
-					SNew(SButton)
-					.Text(FText::FromString("Add"))
-					.OnClicked(this, &SAIPointContextEdModeWidget::OnAddPoint)
-					.IsEnabled(this, &SAIPointContextEdModeWidget::CanAddPoint)
-				]
-				+ SHorizontalBox::Slot().AutoWidth().Padding(0, 0, 2, 0).VAlign(VAlign_Center)
-				[
-					SNew(SButton).Text(FText::FromString("Remove")).OnClicked(this, &SAIPointContextEdModeWidget::OnRemovePoint).IsEnabled(this, &SAIPointContextEdModeWidget::CanRemovePoint)
+	 				SNew(SBorder)
+					.Visibility_Lambda([]() -> EVisibility { return GetDefault<UEditorStyleSettings>()->bEnableLegacyEditorModeUI ? EVisibility::Visible : EVisibility::Collapsed; })
+					.HAlign(HAlign_Center)
+					[
+					 	ModeSwitchButtons.MakeWidget()
+					]
 				]
 			]
-			+ SVerticalBox::Slot().AutoHeight().Padding(0.0F, 5.0F, 0.0F, 0.0F)
-			[
-				SNew(SHorizontalBox)
-				+ SHorizontalBox::Slot().AutoWidth()
-				[
-					SNew(STextBlock).Text(FText::FromString("Sphere Radius"))
-				]
-				+ SHorizontalBox::Slot()
-				[
-					SNew(SNumericEntryBox<float>).AllowSpin(true).MinValue(1.0F)
-					.OnValueChanged(this, &SAIPointContextEdModeWidget::OnChangeDebugSphereRadius)
-					.Value(this, &SAIPointContextEdModeWidget::GetDebugSphereRadius)
-				]
-			]
-			+ SVerticalBox::Slot().AutoHeight()
-			[
-				SNew(SComboBox<TSharedPtr<FString>>).OptionsSource(&AddOptions)
-				.OnSelectionChanged(this, &SAIPointContextEdModeWidget::OnSelectionChanged)
-				.OnGenerateWidget(this, &SAIPointContextEdModeWidget::MakeWidgetForOption)
-				.InitiallySelectedItem(AddOptions[CurrentPointType])
-				[
-					SNew(STextBlock)
-					.Text(this, &SAIPointContextEdModeWidget::GetCurrentPointTypeLabel)
-				]
-			]
-			+ SVerticalBox::Slot().AutoHeight()
-			[
-				SNew(SButton).Text(FText::FromString("Generate Search Points"))
-				.OnClicked(this, &SAIPointContextEdModeWidget::OnGenerateSearchPoints)
-			]
-			+ SVerticalBox::Slot().Padding(0)
+			+ SVerticalBox::Slot()
+			.Padding(0)
 			[
 				DetailsPanel.ToSharedRef()
 			]
@@ -105,7 +92,7 @@ END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 bool SAIPointContextEdModeWidget::GetIsPropertyVisible(const FPropertyAndParent& PropertyAndParent) const
 {
-	return true;
+	return ParentToolkit->GetIsPropertyVisibleFromProperty(PropertyAndParent.Property);
 }
 
 FAIPointContextEdMode* SAIPointContextEdModeWidget::GetEdMode() const
@@ -120,7 +107,7 @@ TSharedRef<SWidget> SAIPointContextEdModeWidget::MakeWidgetForOption(TSharedPtr<
 
 FReply SAIPointContextEdModeWidget::OnAddPoint()
 {
-	GetEdMode()->AddPoint(EPointType::Search);
+	//GetEdMode()->AddPoint(EPointType::Search);
 	return FReply::Handled();
 }
 
@@ -170,6 +157,17 @@ void SAIPointContextEdModeWidget::OnSelectionChanged(TSharedPtr<FString> NewValu
 		CurrentPointType = Index;
 }
 
+bool SAIPointContextEdModeWidget::GetAIPointContextEditorEnabled() const
+{
+	FAIPointContextEdMode* EdMode = GetEdMode();
+	if (EdMode)
+	{
+		return true;
+	}
+
+	return false;
+}
+
 FReply SAIPointContextEdModeWidget::OnGenerateSearchPoints()
 {
 	//GetEdMode()->GenerateSearchPoints();
@@ -191,3 +189,4 @@ void SAIPointContextEdModeWidget::OnChangeSearchPointExtent(float Value)
 	//GetEdMode()->SetSearchPointGenExtent(Value);
 }
 
+#undef LOCTEXT_NAMESPACE

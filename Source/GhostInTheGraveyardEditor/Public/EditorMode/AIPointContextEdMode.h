@@ -12,14 +12,15 @@ struct HAIPointContextProxy : public HHitProxy
 {
 	DECLARE_HIT_PROXY();
 
-	HAIPointContextProxy(UObject* InRefObject, int32 InIndex)
-		: HHitProxy(HPP_UI), RefObject(InRefObject), Index(InIndex)
+	HAIPointContextProxy(UObject* InRefObject, int32 InIndex, EPointType InPointType, int32 InPatrolSection)
+		: HHitProxy(HPP_UI), RefObject(InRefObject), Index(InIndex), PointType(InPointType), PatrolSection(InPatrolSection)
 	{
 	}
 
 	UObject* RefObject;
-	EPointType Type;
 	int32 Index;
+	EPointType PointType;
+	int32 PatrolSection;
 };
 
 class FAIPointContextEdMode : public FEdMode 
@@ -46,7 +47,6 @@ public:
 	virtual bool UsesTransformWidget() const override { return true; }
 	virtual FVector GetWidgetLocation() const override;
 
-	void MapCommands();
 	virtual bool InputKey(FEditorViewportClient* ViewportClient,FViewport* Viewport,FKey Key,EInputEvent Event);
 	TSharedPtr<SWidget> GenerateContextMenu(FEditorViewportClient* InViewportClient) const;
 
@@ -57,24 +57,26 @@ public:
 	void RemovePoint();
 	bool CanRemovePoint();
 	bool HasValidSelection() const;
-	void SelectPoint(AAIPointContextManager* Actor, int32 Index);
+	void SelectPoint(AAIPointContextManager* Actor, int32 Index, EPointType PointType);
 
 	void SetDebugSphereRadius(float Radius);
+	void SetDebugDrawDistance(float Distance);
 	float GetDebugSphereRadius() const { return DebugSphereRadius; }
 	void SetHiddenDebugSpheresByType(bool Hidden, EPointType PointType);
 
 	void GenerateSearchPoints(float Spread, float Extent, float MaxHeight, float SlopeThreshold);
 	void ClearSearchPoints();
 
-	TWeakObjectPtr<AAIPointContextManager> CurrentSelectedTarget;
-	EPointType CurrentSelectedPointType;
-	int32 CurrentSelectedIndex = -1;
-
-	TSharedPtr<FUICommandList> AIPointContextEdModeActions;
+	TSharedRef<FUICommandList> GetUICommandList() const;
 
 public:
 
 	class UAIPointContextEditorObject* UISettings;
+	TWeakObjectPtr<AAIPointContextManager> CurrentSelectedTarget;
+	TSharedPtr<FUICommandList> AIPointContextEdModeActions;
+	EPointType CurrentSelectedPointType = EPointType::Search;
+	int32 CurrentSelectedIndex = -1;
+	int32 CurrentPatrolSection = -1;
 
 private:
 
@@ -82,5 +84,6 @@ private:
 	bool bHiddenSearchPoints = false;
 	bool bHiddenSoundTransferPoints = false;
 	bool bHiddenPatrolPoints = false;
+	float DebugRenderDistance = 800.0F;
 	TArray<FColor, TInlineAllocator<3>> SphereColors = { FColor(51,255,51), FColor(255, 51, 153), FColor(255,255,51)};
 };

@@ -95,7 +95,7 @@ TArray<FVector>* UEnvQueryGenerator_ContextPoints::GetArrayOfPointType(AAIPointC
 		PointsOfInterest = &Manager->SoundTransferPoints;
 		break;
 	case EPointType::Patrol:
-		PointsOfInterest = &Manager->PatrolPoints;
+		//PointsOfInterest = &Manager->PatrolPoints;
 		break;
 	default:
 		break;

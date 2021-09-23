@@ -9,30 +9,6 @@
 #include "PrimitiveSceneProxy.h"
 #include "EditorMode/AIPointContextEditorObject.h"
 
-/* class for setting up keyboard input */
-class FAIPointContextEditorCommands : public TCommands<FAIPointContextEditorCommands>
-{
-public:
-
-	FAIPointContextEditorCommands()
-		: TCommands<FAIPointContextEditorCommands>("AIPointContextEditor",
-			FText::FromString(TEXT("AI Point Context Editor")), NAME_None, FEditorStyle::GetStyleSetName())
-	{
-	}
-
-#define LOCTEXT_NAMESPACE ""
-
-	virtual void RegisterCommands() override 
-	{
-		UI_COMMAND(DeletePoint, "Delete Point", "Delete the currently selected point.", 
-			EUserInterfaceActionType::Button, FInputGesture(EKeys::Delete));
-	}
-
-#undef LOCTEXT_NAMESPACE
-
-	TSharedPtr<FUICommandInfo> DeletePoint;
-};
-
 FAIPointContextEdMode::FAIPointContextEdMode()
 {
 	FAIPointContextEditorCommands::Register();
@@ -79,12 +55,9 @@ void FAIPointContextEdMode::Enter()
 
 	if (Manager)
 	{
-		SelectPoint(Manager, Manager->SearchPoints.Num() - 1);
+		SelectPoint(Manager, Manager->SearchPoints.Num() - 1, EPointType::Search);
 		CurrentSelectedTarget = Manager;
 	}
-
-	// map the UI/keyboard commands
-	MapCommands();
 }
 
 void FAIPointContextEdMode::Exit()
@@ -98,6 +71,7 @@ void FAIPointContextEdMode::Exit()
 void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, FPrimitiveDrawInterface* PDI)
 {
 	const FColor SelectedColor(255, 255, 255);
+	float DebugDrawDistSquared = DebugRenderDistance * DebugRenderDistance;
 
 	UWorld* World = GetWorld();
 	for (TActorIterator<AAIPointContextManager> It(World); It; ++It)
@@ -113,10 +87,38 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 				{
 					bool bSelected = (Actor == CurrentSelectedTarget && i == CurrentSelectedIndex);
 					const FColor& Color = bSelected ? SelectedColor : SphereColors[0];
+					FVector& Point = Actor->SearchPoints[i];				
+					if (FVector::DistSquared(Point, View->ViewLocation) <= DebugDrawDistSquared)
+					{
+						PDI->SetHitProxy(new HAIPointContextProxy(Actor, i, EPointType::Search, -1));
+						DrawWireSphere(PDI, FTransform(Point), Color, DebugSphereRadius, 10, SDPG_Foreground);
+						PDI->SetHitProxy(NULL);
+					}
+				}
+			}
 
-					PDI->SetHitProxy(new HAIPointContextProxy(Actor, i));
-					DrawWireSphere(PDI, FTransform(Actor->SearchPoints[i]), Color, DebugSphereRadius, 10, SDPG_Foreground);
-					PDI->SetHitProxy(NULL);
+			if (!bHiddenPatrolPoints)
+			{
+				int32 SectionNum = Actor->GetPatrolSectionNum();
+				for (int32 Section = 0; Section < SectionNum; Section++)
+				{
+					const TArray<FPatrolPointData>* PatrolData = Actor->GetPatrolPointData(Section);
+					for (const FPatrolPointData& Data : *PatrolData)
+					{
+						bool bSelected = (Actor == CurrentSelectedTarget && Data.Index == CurrentSelectedIndex 
+							&& Data.SectionId == CurrentPatrolSection && CurrentSelectedPointType == EPointType::Patrol);
+
+						const FColor& Color = bSelected ? SelectedColor : SphereColors[1];
+						const FVector& Point = Data.Location;
+
+						FPlane ViewPlane = View->Project(Point);
+ 						if (ViewPlane.X >= -1 && ViewPlane.X <= 1 && ViewPlane.Y >= -1 && ViewPlane.Y <= 1 && FVector::DistSquared(Point, View->ViewLocation) <= DebugDrawDistSquared)
+ 						{
+							PDI->SetHitProxy(new HAIPointContextProxy(Actor, Data.Index, EPointType::Patrol, Data.SectionId));
+							DrawWireSphere(PDI, FTransform(Point), Color, DebugSphereRadius, 10, SDPG_Foreground);
+							PDI->SetHitProxy(NULL);
+						}
+					}
 				}
 			}
 		}
@@ -134,11 +136,30 @@ bool FAIPointContextEdMode::HandleClick(FEditorViewportClient* InViewportClient,
 		{
 			bHandled = true;
 			HAIPointContextProxy* Proxy = (HAIPointContextProxy*)HitProxy;
-			AAIPointContextManager* Actor = Cast<AAIPointContextManager>(Proxy->RefObject);
+			AAIPointContextManager* Manager = Cast<AAIPointContextManager>(Proxy->RefObject);
 			int32 Index = Proxy->Index;
-			if (Actor && Index >= 0 && Index < Actor->SearchPoints.Num())
+			EPointType PointType = Proxy->PointType;
+
+			int32 ArrayNum = 0;
+			if (Manager)
 			{
-				SelectPoint(Actor, Index);
+				switch (PointType)
+				{
+				case EPointType::Patrol:
+					ArrayNum = Manager->GetPatrolSectionPatrolNum(Proxy->PatrolSection);
+					break;
+				case EPointType::Search:
+					ArrayNum = Manager->SearchPoints.Num();
+					break;
+				case EPointType::SoundTransfer:
+					break;
+				}
+			}
+
+			if (Index >= 0 && Index < ArrayNum)
+			{
+				CurrentPatrolSection = Proxy->PatrolSection;
+				SelectPoint(Manager, Index, PointType);
 			}
 		}
 	}
@@ -173,7 +194,18 @@ bool FAIPointContextEdMode::InputDelta(FEditorViewportClient* InViewportClient, 
 		if (!InDrag.IsZero())
 		{
 			CurrentSelectedTarget->Modify();
-			CurrentSelectedTarget->SearchPoints[CurrentSelectedIndex] += InDrag;
+
+			switch (CurrentSelectedPointType)
+			{
+				case EPointType::Search:
+					CurrentSelectedTarget->SearchPoints[CurrentSelectedIndex] += InDrag;
+					break;
+				case EPointType::Patrol:
+					*CurrentSelectedTarget->GetPatrolPointVectorPtr(CurrentPatrolSection, CurrentSelectedIndex) += InDrag;
+					break;
+				default:
+					break;
+			}
 		}
 		return true;
 	}
@@ -185,19 +217,24 @@ FVector FAIPointContextEdMode::GetWidgetLocation() const
 {
 	if (HasValidSelection())
 	{
-		return CurrentSelectedTarget->SearchPoints[CurrentSelectedIndex];
+		switch (CurrentSelectedPointType)
+		{
+		case EPointType::Search:
+			return CurrentSelectedTarget->SearchPoints[CurrentSelectedIndex];
+			break;
+		case EPointType::SoundTransfer:
+			break;
+		case EPointType::Patrol:
+		{
+			FVector Loc = *CurrentSelectedTarget->GetPatrolPointVectorPtr(CurrentPatrolSection, CurrentSelectedIndex);
+			return Loc;
+		}
+		break;
+		default:
+			break;
+		}
 	}
 	return FEdMode::GetWidgetLocation();
-}
-
-void FAIPointContextEdMode::MapCommands()
-{
-	const auto& Commands = FAIPointContextEditorCommands::Get();
-
-	AIPointContextEdModeActions->MapAction(
-		Commands.DeletePoint,
-		FExecuteAction::CreateSP(this, &FAIPointContextEdMode::RemovePoint),
-		FCanExecuteAction::CreateSP(this, &FAIPointContextEdMode::CanRemovePoint));
 }
 
 bool FAIPointContextEdMode::InputKey(FEditorViewportClient* ViewportClient, FViewport* Viewport, FKey Key, EInputEvent Event)
@@ -226,7 +263,7 @@ TSharedPtr<SWidget> FAIPointContextEdMode::GenerateContextMenu(FEditorViewportCl
 			.ColorAndOpacity(FLinearColor::Green);
 		MenuBuilder.AddWidget(LabelWidget, FText::FromString(TEXT("Point Index: ")));
 		MenuBuilder.AddMenuSeparator();
-		MenuBuilder.AddMenuEntry(FAIPointContextEditorCommands::Get().DeletePoint);
+		MenuBuilder.AddMenuEntry(FAIPointContextEditorCommands::Get().AddPoint);
 	}
 	MenuBuilder.EndSection();
 	MenuBuilder.PopCommandList();
@@ -253,6 +290,7 @@ void FAIPointContextEdMode::AddPoint(EPointType PointType)
 	{
 		// this allows us to undo/redo
 		const FScopedTransaction Transaction(FText::FromString("Add Point"));
+
 		FEditorViewportClient* Client = (FEditorViewportClient*)GEditor->GetActiveViewport()->GetClient();
 		// cast a ray to place sphere on geometry
 		const FVector StartLocation = Client->GetViewLocation();
@@ -264,9 +302,31 @@ void FAIPointContextEdMode::AddPoint(EPointType PointType)
 			NewPoint = HitResult.Location + (HitResult.Normal * DebugSphereRadius);
 		else
 			NewPoint = Client->GetViewLocation() + (Client->GetViewRotation().Vector() * DebugSphereRadius);
+
+		switch (PointType)
+		{
+			case EPointType::Patrol:
+				if (CurrentPatrolSection != -1)
+				{
+					int32 Index = Manager->AddPatrolPointToSection(NewPoint, CurrentPatrolSection);
+					SelectPoint(Manager, Index, PointType);
+				}
+				else
+				{
+					CurrentPatrolSection = Manager->CreatePatrolSection(NewPoint);
+					SelectPoint(Manager, 0, PointType);
+				}
+				break;
+			case EPointType::Search:
+				Manager->SearchPoints.Add(NewPoint);
+				SelectPoint(Manager, Manager->SearchPoints.Num() - 1, PointType);
+				break;
+			case EPointType::SoundTransfer:
+				// TO BE IMPLEMENTED
+				break;
+		}
+
 		Manager->Modify();
-		Manager->SearchPoints.Add(NewPoint);
-		SelectPoint(Manager, Manager->SearchPoints.Num() - 1);
 	}
 }
 
@@ -281,15 +341,15 @@ bool FAIPointContextEdMode::CanAddPoint(EPointType PointType) const
 
 void FAIPointContextEdMode::RemovePoint()
 {
-	if (HasValidSelection())
-	{
-		const FScopedTransaction Transaction(FText::FromString("Remove Point"));
-
-		// remove the point
-		CurrentSelectedTarget->Modify();
-		CurrentSelectedTarget->SearchPoints.RemoveAt(CurrentSelectedIndex);
-		SelectPoint(nullptr, -1);
-	}
+// 	if (HasValidSelection())
+// 	{
+// 		const FScopedTransaction Transaction(FText::FromString("Remove Point"));
+// 
+// 		// remove the point
+// 		CurrentSelectedTarget->Modify();
+// 		CurrentSelectedTarget->SearchPoints.RemoveAt(CurrentSelectedIndex);
+// 		SelectPoint(nullptr, -1);
+// 	}
 }
 
 bool FAIPointContextEdMode::CanRemovePoint()
@@ -299,13 +359,29 @@ bool FAIPointContextEdMode::CanRemovePoint()
 
 bool FAIPointContextEdMode::HasValidSelection() const
 {
-	return CurrentSelectedTarget.IsValid() && CurrentSelectedIndex >= 0 && CurrentSelectedIndex < CurrentSelectedTarget->SearchPoints.Num();
+	const bool bValidTarget =  CurrentSelectedTarget.IsValid();
+	if (bValidTarget)
+	{
+		switch (CurrentSelectedPointType)
+		{
+		case EPointType::Search:
+			return CurrentSelectedIndex >= 0 && CurrentSelectedIndex < CurrentSelectedTarget->SearchPoints.Num();
+		case EPointType::SoundTransfer:
+			return false;
+		case EPointType::Patrol:
+			return CurrentSelectedTarget->IsValid(CurrentPatrolSection, CurrentSelectedIndex);
+		default:
+			break;
+		}
+	}
+	return false;
 }
 
-void FAIPointContextEdMode::SelectPoint(AAIPointContextManager* Actor, int32 Index)
+void FAIPointContextEdMode::SelectPoint(AAIPointContextManager* Actor, int32 Index, EPointType PointType)
 {
 	CurrentSelectedTarget = Actor;
 	CurrentSelectedIndex = Index;
+	CurrentSelectedPointType = PointType;
 
 	// select this actor only
 	if (CurrentSelectedTarget.IsValid())
@@ -318,6 +394,11 @@ void FAIPointContextEdMode::SelectPoint(AAIPointContextManager* Actor, int32 Ind
 void FAIPointContextEdMode::SetDebugSphereRadius(float Radius)
 {
 	DebugSphereRadius = Radius;
+}
+
+void FAIPointContextEdMode::SetDebugDrawDistance(float Distance)
+{
+	DebugRenderDistance = Distance;
 }
 
 void FAIPointContextEdMode::SetHiddenDebugSpheresByType(bool Hidden, EPointType PointType)
@@ -339,7 +420,7 @@ void FAIPointContextEdMode::SetHiddenDebugSpheresByType(bool Hidden, EPointType 
 
 	if (PointType == CurrentSelectedPointType)
 	{
-		SelectPoint(nullptr, -1);
+		SelectPoint(nullptr, -1, PointType);
 	}
 }
 
@@ -393,6 +474,11 @@ void FAIPointContextEdMode::ClearSearchPoints()
 		Manager->SearchPoints.Empty();
 	}
 
-	SelectPoint(nullptr, -1);
+	SelectPoint(nullptr, -1, EPointType::Search);
 }
 
+TSharedRef<FUICommandList> FAIPointContextEdMode::GetUICommandList() const
+{
+	check(Toolkit.IsValid());
+	return Toolkit->GetToolkitCommands();
+}

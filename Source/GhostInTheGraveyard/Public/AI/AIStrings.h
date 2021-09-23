@@ -5,7 +5,8 @@
 
 namespace FAIPerceptionTags
 {
-	const static FName FaucetNoise = TEXT("Trap_Noise");
+	const static FName ProminentNoiseTag = TEXT("ProminentNoise");
+	const static FName NoiseTag = TEXT("Noise");
 }
 
 namespace FBBKeys

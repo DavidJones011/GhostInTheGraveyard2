@@ -8,6 +8,7 @@ UAIPointContextEditorObject::UAIPointContextEditorObject(const FObjectInitialize
 , GenerationMaxHeight(500.0F)
 , GenerationSlopeThreshold(0.4)
 , DebugSphereRadius(30.0F)
+, DebugDrawDistance(30000.0F)
 {
 	
 }
@@ -75,6 +76,12 @@ void UAIPointContextEditorObject::PostEditChangeProperty(FPropertyChangedEvent& 
 	{
 		if (ParentMode)
 			ParentMode->SetHiddenDebugSpheresByType(bHiddenSearchPoints, EPointType::Patrol);
+	}
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(UAIPointContextEditorObject, DebugDrawDistance))
+	{
+		if (ParentMode)
+			ParentMode->SetDebugDrawDistance(DebugDrawDistance);
 	}
 }
 #endif

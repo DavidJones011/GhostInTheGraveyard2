@@ -46,6 +46,9 @@ class UAIPointContextEditorObject : public UObject
 	UPROPERTY(Category = "Debug", EditAnywhere, meta = (DisplayName = "Hide Patrol Points", ShowForTools = "HidePatrolPoints"))
 	bool bHiddenPatrolPoints;
 
+	UPROPERTY(Category = "Debug", EditAnywhere, meta = (DisplayName = "Debug Draw Distance", ShowForTools = "Draw Debug Distance"))
+	float DebugDrawDistance;
+
 public:
 
 #if WITH_EDITOR
