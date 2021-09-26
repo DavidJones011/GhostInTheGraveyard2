@@ -4,12 +4,19 @@
 
 void FAIPointContextEdModeToolkit::Init(const TSharedPtr< class IToolkitHost >& InitToolkitHost)
 {
-	const auto& Commands = FAIPointContextEditorCommands::Get();
-
-	GetEditorMode()->GetUICommandList()->MapAction(Commands.AddPoint, FUIAction(FExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::OnAddPoint), FCanExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::CanAddPoint)));
+	MapCommands();
 
 	AIPointContextEdModeWidget = SNew(SAIPointContextEdModeWidget, SharedThis(this));
 	FModeToolkit::Init(InitToolkitHost);
+}
+
+void FAIPointContextEdModeToolkit::MapCommands()
+{
+	const auto& Commands = FAIPointContextEditorCommands::Get();
+	TSharedRef<FUICommandList> CommandList = GetEditorMode()->GetUICommandList();
+
+	CommandList->MapAction(Commands.AddPoint, 
+		FUIAction(FExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::OnAddPoint), FCanExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::CanAddPoint)));
 }
 
 FAIPointContextEdMode* FAIPointContextEdModeToolkit::GetEditorMode() const
@@ -30,7 +37,7 @@ void FAIPointContextEdModeToolkit::BuildToolPalette(FName PaletteName, class FTo
 {
 	auto Commands = FAIPointContextEditorCommands::Get();
 	FAIPointContextEdMode* EdMode = GetEditorMode();
-	
+
 	ToolbarBuilder.BeginSection("Edit");
 	//ToolbarBuilder.AddComboButton(Commands.ChangeType, FOnGetContent::CreateSP(this, &FAIPointContextEdModeToolkit::GetPointTypeSelector));
 	ToolbarBuilder.AddToolBarButton(Commands.AddPoint);

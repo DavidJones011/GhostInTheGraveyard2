@@ -5,6 +5,8 @@
 #include "EdMode.h"
 #include "AI/AIPointContextManager.h"
 
+class UAIPointContextEditorObject;
+
 /**
  * Hit proxy so that points can be manipulated through the viewport editor.
  */
@@ -21,6 +23,14 @@ struct HAIPointContextProxy : public HHitProxy
 	int32 Index;
 	EPointType PointType;
 	int32 PatrolSection;
+};
+
+struct SelectionData
+{
+	TWeakObjectPtr<AAIPointContextManager> CurrentSelectedTarget;
+	EPointType CurrentSelectedPointType = EPointType::Search;
+	int32 CurrentSelectedIndex = -1;
+	int32 Section = -1;
 };
 
 class FAIPointContextEdMode : public FEdMode 
@@ -57,7 +67,7 @@ public:
 	void RemovePoint();
 	bool CanRemovePoint();
 	bool HasValidSelection() const;
-	void SelectPoint(AAIPointContextManager* Actor, int32 Index, EPointType PointType);
+	void SelectPoint(AAIPointContextManager* Actor, int32 Index, EPointType PointType, int32 Section = -1);
 
 	void SetDebugSphereRadius(float Radius);
 	void SetDebugDrawDistance(float Distance);
@@ -67,16 +77,19 @@ public:
 	void GenerateSearchPoints(float Spread, float Extent, float MaxHeight, float SlopeThreshold);
 	void ClearSearchPoints();
 
+	bool IsAlreadySelected(const SelectionData& InData, int32& OutIndex);
+
 	TSharedRef<FUICommandList> GetUICommandList() const;
 
-public:
+	UAIPointContextEditorObject* GetUISettings() const { return UISettings; }
 
-	class UAIPointContextEditorObject* UISettings;
-	TWeakObjectPtr<AAIPointContextManager> CurrentSelectedTarget;
+protected:
+
+	UAIPointContextEditorObject* UISettings;
 	TSharedPtr<FUICommandList> AIPointContextEdModeActions;
-	EPointType CurrentSelectedPointType = EPointType::Search;
-	int32 CurrentSelectedIndex = -1;
-	int32 CurrentPatrolSection = -1;
+	TArray<SelectionData> Selection;
+
+	bool bIsMultiSelecting = false;
 
 private:
 

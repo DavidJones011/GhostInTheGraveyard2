@@ -45,6 +45,8 @@ public:
 	/** Initializes the geometry mode toolkit */
 	virtual void Init(const TSharedPtr< class IToolkitHost >& InitToolkitHost) override;
 
+	void MapCommands();
+
 	virtual FName GetToolkitFName() const override { return FName("AIPointContextEdMode"); }
 	virtual FText GetBaseToolkitName() const override { return NSLOCTEXT("BuilderModeToolkit", "DisplayName", "Builder"); }
 	virtual class FAIPointContextEdMode* GetEditorMode() const override;

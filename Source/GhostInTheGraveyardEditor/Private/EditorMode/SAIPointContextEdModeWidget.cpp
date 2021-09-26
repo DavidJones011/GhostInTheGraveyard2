@@ -42,7 +42,7 @@ void SAIPointContextEdModeWidget::Construct(const FArguments& InArgs, TSharedRef
 	FAIPointContextEdMode* EdMode = GetEdMode();
 	if (EdMode)
 	{
-		DetailsPanel->SetObject((UObject*)EdMode->UISettings);
+		DetailsPanel->SetObject((UObject*)EdMode->GetUISettings());
 	}
 
 	//AddOptions.Add(MakeShareable(new FString("Search Point")));
