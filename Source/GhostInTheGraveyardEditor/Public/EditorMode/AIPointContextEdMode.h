@@ -69,6 +69,9 @@ public:
 	bool HasValidSelection() const;
 	void SelectPoint(AAIPointContextManager* Actor, int32 Index, EPointType PointType, int32 Section = -1);
 
+	void CreateLink();
+	bool CanCreateLink() const;
+
 	void SetDebugSphereRadius(float Radius);
 	void SetDebugDrawDistance(float Distance);
 	float GetDebugSphereRadius() const { return DebugSphereRadius; }
@@ -78,9 +81,9 @@ public:
 	void ClearSearchPoints();
 
 	bool IsAlreadySelected(const SelectionData& InData, int32& OutIndex);
+	int32 SelectionNum() const { return Selection.Num(); }
 
 	TSharedRef<FUICommandList> GetUICommandList() const;
-
 	UAIPointContextEditorObject* GetUISettings() const { return UISettings; }
 
 protected:

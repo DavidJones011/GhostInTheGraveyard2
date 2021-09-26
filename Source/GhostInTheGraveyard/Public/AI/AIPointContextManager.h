@@ -13,6 +13,14 @@ enum EPointType
 	Patrol = 2
 };
 
+UENUM()
+enum EUnlinkPoints
+{
+	Unlink_Next,
+	Unlink_Prior,
+	Unlink_Both
+};
+
 USTRUCT()
 struct GHOSTINTHEGRAVEYARD_API FPatrolPointData
 {
@@ -28,10 +36,10 @@ struct GHOSTINTHEGRAVEYARD_API FPatrolPointData
 	FVector Location;
 
 	UPROPERTY()
-	TArray<int32> LinkedPatrolIndex;
+	int32 PriorLinkIndex = -1;
 
 	UPROPERTY()
-	TArray<int32> LinkedPatrolSection;
+	int32 NextLinkIndex = -1;
 };
 
 USTRUCT()
@@ -87,7 +95,13 @@ public:
 	 * Creates a link between two patrol points.
 	 */
 	UFUNCTION(BlueprintCallable)
-	void LinkPatrolPoints(int32 FromPointIndex, int32 FromPointSection, int32 ToPointIndex, int32 ToPointSection, bool bLinkBothWays = false);
+	void LinkPatrolPoints(int32 FromPointIndex, int32 ToPointIndex, int32 Section, bool bLinkBothWays = false);
+
+	/**
+	* Removes the link between two patrol points
+	*/
+	UFUNCTION(BlueprintCallable)
+	void RemoveLink(int32 PointIndex, int32 Section, EUnlinkPoints UnlinkType);
 
 	/*
 	* Get the number of patrol sections;
@@ -102,7 +116,7 @@ public:
 	bool IsValid(int32 SectionID, int32 PointIndex) const;
 
 	/*
-	* Attempts to a reference to the patrol point data at a given index and section.
+	* Attempts to get a reference to the patrol point data at a given index and section.
 	*/
 	UFUNCTION()
 	bool TryGetPatrolPointData(int32 PointIndex, int32 SectionID, FPatrolPointData& Data) const;

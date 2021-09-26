@@ -17,6 +17,9 @@ void FAIPointContextEdModeToolkit::MapCommands()
 
 	CommandList->MapAction(Commands.AddPoint, 
 		FUIAction(FExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::OnAddPoint), FCanExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::CanAddPoint)));
+
+	CommandList->MapAction(Commands.LinkPoints,
+		FUIAction(FExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::OnLinkPoints), FCanExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::CanLinkPoints)));
 }
 
 FAIPointContextEdMode* FAIPointContextEdModeToolkit::GetEditorMode() const
@@ -41,6 +44,7 @@ void FAIPointContextEdModeToolkit::BuildToolPalette(FName PaletteName, class FTo
 	ToolbarBuilder.BeginSection("Edit");
 	//ToolbarBuilder.AddComboButton(Commands.ChangeType, FOnGetContent::CreateSP(this, &FAIPointContextEdModeToolkit::GetPointTypeSelector));
 	ToolbarBuilder.AddToolBarButton(Commands.AddPoint);
+	ToolbarBuilder.AddToolBarButton(Commands.LinkPoints);
 	ToolbarBuilder.AddSeparator();
 	ToolbarBuilder.EndSection();
 }
@@ -62,4 +66,24 @@ void FAIPointContextEdModeToolkit::OnAddPoint()
 bool FAIPointContextEdModeToolkit::CanAddPoint() const
 {
 	return true;
+}
+
+void FAIPointContextEdModeToolkit::OnLinkPoints()
+{
+	FAIPointContextEdMode* EdMode = GetEditorMode();
+	if (EdMode)
+	{
+		EdMode->CreateLink();
+	}
+}
+
+bool FAIPointContextEdModeToolkit::CanLinkPoints() const
+{
+	FAIPointContextEdMode* EdMode = GetEditorMode();
+	if (EdMode)
+	{
+		return EdMode->CanCreateLink();
+	};
+
+	return false;
 }

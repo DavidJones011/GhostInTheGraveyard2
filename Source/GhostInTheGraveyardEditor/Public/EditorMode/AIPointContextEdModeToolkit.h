@@ -27,15 +27,15 @@ public:
 		UI_COMMAND(AddPoint, "Add Point", "Add a point.",
 			EUserInterfaceActionType::Button, FInputChord());
 
-		UI_COMMAND(ChangeType, "Change Type", "Changes the point type.",
-			EUserInterfaceActionType::Button, FInputChord());
+		UI_COMMAND(LinkPoints, "Link Points", "Link two points.", 
+			EUserInterfaceActionType::Button, FInputChord(EKeys::L));
 	}
 
 #undef LOCTEXT_NAMESPACE
 
 	//TSharedPtr<FUICommandInfo> DeletePoint;
 	TSharedPtr<FUICommandInfo> AddPoint;
-	TSharedPtr<FUICommandInfo> ChangeType;
+	TSharedPtr<FUICommandInfo> LinkPoints;
 };
 
 class FAIPointContextEdModeToolkit : public FModeToolkit
@@ -59,6 +59,9 @@ public:
 
 	void OnAddPoint();
 	bool CanAddPoint() const;
+
+	void OnLinkPoints();
+	bool CanLinkPoints() const;
 
 private:
 

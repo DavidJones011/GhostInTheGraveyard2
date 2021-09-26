@@ -44,26 +44,58 @@ int32 AAIPointContextManager::AddPatrolPointToSection(FVector Point, int32 Secti
 	return NewIndex;
 }
 
-void AAIPointContextManager::LinkPatrolPoints(int32 FromPointIndex, int32 FromPointSection, int32 ToPointIndex, int32 ToPointSection, bool bLinkBothWays /*= false*/)
+void AAIPointContextManager::LinkPatrolPoints(int32 FromPointIndex, int32 ToPointIndex, int32 Section, bool bLinkBothWays /*= false*/)
 {
 	// check if the section and index are valid
-	if(!IsValid(FromPointSection, FromPointIndex) || !IsValid(ToPointSection, ToPointIndex))
+	if(!IsValid(Section, FromPointIndex) || !IsValid(Section, ToPointIndex))
 		return;
 
 	// doesn't make much sense to create a link to itself
-	if(FromPointIndex == ToPointIndex && FromPointSection == ToPointSection)
+	if(FromPointIndex == ToPointIndex)
 		return;
 
-	FPatrolPointData& FromData = PatrolSections[FromPointSection].PatrolPoints[FromPointIndex];
-	FPatrolPointData& ToData = PatrolSections[ToPointSection].PatrolPoints[ToPointIndex];
+	FPatrolPointData& FromData = PatrolSections[Section].PatrolPoints[FromPointIndex];
+	FPatrolPointData& ToData = PatrolSections[Section].PatrolPoints[ToPointIndex];
 
-	FromData.LinkedPatrolIndex.Add(ToPointIndex);
-	FromData.LinkedPatrolSection.Add(ToPointSection);
+	FromData.NextLinkIndex = ToPointIndex;
 
 	if (bLinkBothWays)
 	{
-		ToData.LinkedPatrolIndex.Add(FromPointIndex);
-		ToData.LinkedPatrolSection.Add(FromPointSection);
+		ToData.PriorLinkIndex = FromPointIndex;
+	}
+}
+
+void AAIPointContextManager::RemoveLink(int32 PointIndex, int32 Section, EUnlinkPoints UnlinkType)
+{
+	// check if the section and index are valid
+	if (!IsValid(Section, PointIndex))
+		return;
+
+	FPatrolPointData& Data = PatrolSections[Section].PatrolPoints[PointIndex];
+	if (UnlinkType == EUnlinkPoints::Unlink_Next || UnlinkType == EUnlinkPoints::Unlink_Both)
+	{
+		FPatrolPointData NextData;
+		if (TryGetPatrolPointData(Data.NextLinkIndex, Section, NextData))
+		{
+			if (NextData.PriorLinkIndex == PointIndex)
+			{
+				NextData.PriorLinkIndex = -1;
+			}
+		}
+		Data.NextLinkIndex = -1;
+	}
+
+	if (UnlinkType == EUnlinkPoints::Unlink_Prior || UnlinkType == EUnlinkPoints::Unlink_Both)
+	{
+		FPatrolPointData PriorData;
+		if (TryGetPatrolPointData(Data.PriorLinkIndex, Section, PriorData))
+		{
+			if (PriorData.NextLinkIndex == PointIndex)
+			{
+				PriorData.NextLinkIndex = -1;
+			}
+		}
+		Data.PriorLinkIndex = -1;
 	}
 }
 

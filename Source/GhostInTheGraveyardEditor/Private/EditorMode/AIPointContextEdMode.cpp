@@ -103,21 +103,58 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 				for (int32 Section = 0; Section < SectionNum; Section++)
 				{
 					const TArray<FPatrolPointData>* PatrolData = Actor->GetPatrolPointData(Section);
-					for (const FPatrolPointData& Data : *PatrolData)
+					TArray<bool> Marked;
+					Marked.AddZeroed(PatrolData->Num());
+					TArray<int32> TraversalStack;
+					for (int32 Index = 0; Index < PatrolData->Num(); Index++)
 					{
-						//bool bSelected = (Actor == CurrentSelectedTarget && Data.Index == CurrentSelectedIndex
-							//&& Data.SectionId == CurrentPatrolSection && CurrentSelectedPointType == EPointType::Patrol);
+						if(Marked[Index]) // already marked
+							continue;
 
-						bool bSelected = false;
-						const FColor& Color = bSelected ? SelectedColor : SphereColors[1];
-						const FVector& Point = Data.Location;
+						TraversalStack.Push(Index);
 
-						FPlane ViewPlane = View->Project(Point);
- 						if (ViewPlane.X >= -1 && ViewPlane.X <= 1 && ViewPlane.Y >= -1 && ViewPlane.Y <= 1 && FVector::DistSquared(Point, View->ViewLocation) <= DebugDrawDistSquared)
- 						{
-							PDI->SetHitProxy(new HAIPointContextProxy(Actor, Data.Index, EPointType::Patrol, Data.SectionId));
-							DrawWireSphere(PDI, FTransform(Point), Color, DebugSphereRadius, 10, SDPG_Foreground);
-							PDI->SetHitProxy(NULL);
+						while (TraversalStack.Num() > 0)
+						{
+							int32 Top = TraversalStack.Pop();
+							const FPatrolPointData& Data = (*PatrolData)[Top];
+							Marked[Top] = true;
+
+							//bool bSelected = (Actor == CurrentSelectedTarget && Data.Index == CurrentSelectedIndex
+								//&& Data.SectionId == CurrentPatrolSection && CurrentSelectedPointType == EPointType::Patrol);
+
+							bool bSelected = false;
+							const FColor& Color = bSelected ? SelectedColor : SphereColors[1];
+							const FVector& Point = Data.Location;
+
+							if (Data.PriorLinkIndex != -1)
+							{
+								FPatrolPointData PriorData;
+								if (!Marked[Data.PriorLinkIndex] && Actor->TryGetPatrolPointData(Data.PriorLinkIndex, Data.SectionId, PriorData))
+								{						
+									TraversalStack.Push(Data.PriorLinkIndex);
+									PDI->DrawLine(Data.Location, PriorData.Location, Color, SDPG_Foreground);
+									//DrawConnectedArrow(PDI, FTransform(PriorData.Location - Data.Location).ToMatrixNoScale(), Color, 50.0F, 50.0F, SDPG_Foreground);
+								}
+							}
+
+							if (Data.NextLinkIndex != -1)
+							{								
+								FPatrolPointData NextData;
+								if (!Marked[Data.NextLinkIndex] && Actor->TryGetPatrolPointData(Data.NextLinkIndex, Data.SectionId, NextData))
+								{
+									TraversalStack.Push(Data.NextLinkIndex);
+									PDI->DrawLine(Data.Location, NextData.Location, Color, SDPG_Foreground);
+									//DrawConnectedArrow(PDI, FTransform(NextData.Location - Data.Location).ToMatrixNoScale(), Color, 50.0F, 50.0F, SDPG_Foreground);
+								}
+							}
+
+							FPlane ViewPlane = View->Project(Point);
+							if (ViewPlane.X >= -1 && ViewPlane.X <= 1 && ViewPlane.Y >= -1 && ViewPlane.Y <= 1 && FVector::DistSquared(Point, View->ViewLocation) <= DebugDrawDistSquared)
+							{
+								PDI->SetHitProxy(new HAIPointContextProxy(Actor, Data.Index, EPointType::Patrol, Data.SectionId));
+								DrawWireSphere(PDI, FTransform(Point), Color, DebugSphereRadius, 10, SDPG_Foreground);
+								PDI->SetHitProxy(NULL);
+							}
 						}
 					}
 				}
@@ -441,6 +478,28 @@ void FAIPointContextEdMode::SelectPoint(AAIPointContextManager* Actor, int32 Ind
 		GEditor->SelectNone(true, true);
 		GEditor->SelectActor(SelectedActor.Get(), true, true);
 	}
+}
+
+void FAIPointContextEdMode::CreateLink()
+{
+	const FScopedTransaction Transaction(FText::FromString("Link Points"));
+
+	AAIPointContextManager* Manager = GetSelectedTargetPointActor();
+
+	Manager->LinkPatrolPoints(Selection[0].CurrentSelectedIndex, Selection[1].CurrentSelectedIndex, Selection[0].Section, true);
+
+	Manager->Modify();
+}
+
+bool FAIPointContextEdMode::CanCreateLink() const
+{
+	if (SelectionNum() != 2)
+		return false;
+
+	return Selection[0].Section == Selection[1].Section &&
+	Selection[0].CurrentSelectedIndex != Selection[1].CurrentSelectedIndex &&
+	Selection[0].CurrentSelectedPointType == Selection[1].CurrentSelectedPointType &&
+	Selection[0].CurrentSelectedTarget == Selection[1].CurrentSelectedTarget;
 }
 
 void FAIPointContextEdMode::SetDebugSphereRadius(float Radius)
