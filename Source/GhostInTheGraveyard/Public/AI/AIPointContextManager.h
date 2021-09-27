@@ -92,6 +92,12 @@ public:
 	int32 AddPatrolPointToSection(FVector Point, int32 SectionID);
 
 	/**
+	 * Removes a patrol point
+	 */
+	UFUNCTION(BlueprintCallable)
+	void RemovePatrolPointFromSection(int32 Index, int32 Section);
+
+	/**
 	 * Creates a link between two patrol points.
 	 */
 	UFUNCTION(BlueprintCallable)

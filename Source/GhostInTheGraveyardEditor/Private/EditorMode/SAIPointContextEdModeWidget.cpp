@@ -118,13 +118,13 @@ bool SAIPointContextEdModeWidget::CanAddPoint() const
 
 FReply SAIPointContextEdModeWidget::OnRemovePoint()
 {
-	GetEdMode()->RemovePoint();
+	GetEdMode()->RemovePoints();
 	return FReply::Handled();
 }
 
 bool SAIPointContextEdModeWidget::CanRemovePoint() const
 {
-	return GetEdMode()->CanRemovePoint();
+	return GetEdMode()->CanRemovePoints();
 }
 
 void SAIPointContextEdModeWidget::OnChangeDebugSphereRadius(float Value)

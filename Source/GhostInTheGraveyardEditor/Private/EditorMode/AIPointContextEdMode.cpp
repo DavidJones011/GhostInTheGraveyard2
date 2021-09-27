@@ -401,22 +401,27 @@ bool FAIPointContextEdMode::CanAddPoint(EPointType PointType) const
 	return (GetSelectedTargetPointActor() != nullptr);
 }
 
-void FAIPointContextEdMode::RemovePoint()
+void FAIPointContextEdMode::RemovePoints()
 {
-// 	if (HasValidSelection())
-// 	{
-// 		const FScopedTransaction Transaction(FText::FromString("Remove Point"));
-// 
-// 		// remove the point
-// 		CurrentSelectedTarget->Modify();
-// 		CurrentSelectedTarget->SearchPoints.RemoveAt(CurrentSelectedIndex);
-// 		SelectPoint(nullptr, -1);
-// 	}
+	AAIPointContextManager* Manager = GetSelectedTargetPointActor();
+	if (Manager)
+	{
+		const FScopedTransaction Transaction(FText::FromString("Remove Point"));
+		for (const SelectionData& SelectData : Selection)
+		{
+			Manager->RemovePatrolPointFromSection(SelectData.CurrentSelectedIndex, SelectData.Section);
+		}
+		Manager->Modify();
+		Selection.Empty();
+	}
 }
 
-bool FAIPointContextEdMode::CanRemovePoint()
+bool FAIPointContextEdMode::CanRemovePoints() const
 {
-	return HasValidSelection();
+	if (Selection.Num() == 0 || !HasValidSelection())
+		return false;
+
+	return true;
 }
 
 bool FAIPointContextEdMode::HasValidSelection() const
@@ -486,20 +491,47 @@ void FAIPointContextEdMode::CreateLink()
 
 	AAIPointContextManager* Manager = GetSelectedTargetPointActor();
 
-	Manager->LinkPatrolPoints(Selection[0].CurrentSelectedIndex, Selection[1].CurrentSelectedIndex, Selection[0].Section, true);
-
-	Manager->Modify();
+	if (Manager && SelectionNum() > 1)
+	{
+		SelectionData* PriorData = &Selection[0];
+		for (int32 Index = 1; Index < Selection.Num(); Index++)
+		{
+			SelectionData* SelectData = &Selection[Index];
+			Manager->LinkPatrolPoints(PriorData->CurrentSelectedIndex, SelectData->CurrentSelectedIndex, SelectData->Section, true);
+			PriorData = SelectData;
+		}
+		Manager->Modify();
+	}
 }
 
 bool FAIPointContextEdMode::CanCreateLink() const
 {
-	if (SelectionNum() != 2)
+	if (SelectionNum() < 2 || !HasValidSelection())
 		return false;
 
-	return Selection[0].Section == Selection[1].Section &&
-	Selection[0].CurrentSelectedIndex != Selection[1].CurrentSelectedIndex &&
-	Selection[0].CurrentSelectedPointType == Selection[1].CurrentSelectedPointType &&
-	Selection[0].CurrentSelectedTarget == Selection[1].CurrentSelectedTarget;
+	return SelectionSharesSame(true);
+}
+
+void FAIPointContextEdMode::ClearLinks()
+{
+	AAIPointContextManager* Manager = GetSelectedTargetPointActor();
+	if (Manager)
+	{
+		const FScopedTransaction Transaction(FText::FromString("Clear Links"));
+		for (const SelectionData& SelectData : Selection)
+		{
+			Manager->RemoveLink(SelectData.CurrentSelectedIndex, SelectData.Section, Unlink_Both);
+		}
+		Manager->Modify();
+	}
+}
+
+bool FAIPointContextEdMode::CanClearLinks() const
+{
+	if(Selection.Num() == 0 || !HasValidSelection())
+		return false;
+
+	return true;
 }
 
 void FAIPointContextEdMode::SetDebugSphereRadius(float Radius)
@@ -581,6 +613,29 @@ void FAIPointContextEdMode::ClearSearchPoints()
 	}
 
 	SelectPoint(nullptr, -1, EPointType::Search);
+}
+
+bool FAIPointContextEdMode::SelectionSharesSame(bool bCompareSection /*= false*/) const
+{
+	if(GetSelectedTargetPointActor() == nullptr || Selection.Num() == 0)
+		return false;
+
+	if(Selection.Num() == 1)
+		return true;
+
+	EPointType FoundType = Selection[0].CurrentSelectedPointType;
+	AAIPointContextManager* FoundTarget = Selection[0].CurrentSelectedTarget.Get();
+	int32 FoundSection = Selection[0].Section;
+	for (int32 i = 1; i < Selection.Num(); i++)
+	{
+		const SelectionData& Data = Selection[i];
+		if((Data.CurrentSelectedPointType != FoundType) || 
+			(Data.CurrentSelectedTarget != FoundTarget) ||
+			(bCompareSection && (Data.Section != FoundSection)))
+			return false;
+	}
+
+	return true;
 }
 
 bool FAIPointContextEdMode::IsAlreadySelected(const SelectionData& InData, int32& OutIndex)

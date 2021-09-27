@@ -24,11 +24,17 @@ public:
 
 	virtual void RegisterCommands() override
 	{
-		UI_COMMAND(AddPoint, "Add Point", "Add a point.",
+		UI_COMMAND(AddPoint, "Add Point", "Adds a point.",
 			EUserInterfaceActionType::Button, FInputChord());
 
-		UI_COMMAND(LinkPoints, "Link Points", "Link two points.", 
+		UI_COMMAND(LinkPoints, "Link Points", "Links points in selected order.", 
 			EUserInterfaceActionType::Button, FInputChord(EKeys::L));
+
+		UI_COMMAND(ClearLinks, "Clear Link(s)", "Clears the links of selected points.",
+			EUserInterfaceActionType::Button, FInputChord(EKeys::U));
+
+		UI_COMMAND(DeletePoints, "Delete Point(s)", "Deletes selected points.",
+			EUserInterfaceActionType::Button, FInputChord(EKeys::Delete));
 	}
 
 #undef LOCTEXT_NAMESPACE
@@ -36,6 +42,8 @@ public:
 	//TSharedPtr<FUICommandInfo> DeletePoint;
 	TSharedPtr<FUICommandInfo> AddPoint;
 	TSharedPtr<FUICommandInfo> LinkPoints;
+	TSharedPtr<FUICommandInfo> ClearLinks;
+	TSharedPtr<FUICommandInfo> DeletePoints;
 };
 
 class FAIPointContextEdModeToolkit : public FModeToolkit
@@ -62,6 +70,12 @@ public:
 
 	void OnLinkPoints();
 	bool CanLinkPoints() const;
+
+	void OnClearLinks();
+	bool CanClearLinks() const;
+
+	void OnRemovePoints();
+	bool CanRemovePoints() const;
 
 private:
 

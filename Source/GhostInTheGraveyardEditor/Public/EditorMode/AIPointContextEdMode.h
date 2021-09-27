@@ -64,13 +64,18 @@ public:
 	void AddPoint(EPointType PointType);
 	void AddPointAtLocation(FVector Location, EPointType PointType);
 	bool CanAddPoint(EPointType PointType) const;
-	void RemovePoint();
-	bool CanRemovePoint();
+
+	void RemovePoints();
+	bool CanRemovePoints() const;
+
 	bool HasValidSelection() const;
 	void SelectPoint(AAIPointContextManager* Actor, int32 Index, EPointType PointType, int32 Section = -1);
 
 	void CreateLink();
 	bool CanCreateLink() const;
+
+	void ClearLinks();
+	bool CanClearLinks() const;
 
 	void SetDebugSphereRadius(float Radius);
 	void SetDebugDrawDistance(float Distance);
@@ -79,6 +84,8 @@ public:
 
 	void GenerateSearchPoints(float Spread, float Extent, float MaxHeight, float SlopeThreshold);
 	void ClearSearchPoints();
+
+	bool SelectionSharesSame(bool bCompareSection = false) const;
 
 	bool IsAlreadySelected(const SelectionData& InData, int32& OutIndex);
 	int32 SelectionNum() const { return Selection.Num(); }

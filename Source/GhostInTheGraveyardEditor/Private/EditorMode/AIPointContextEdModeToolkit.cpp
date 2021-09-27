@@ -20,6 +20,12 @@ void FAIPointContextEdModeToolkit::MapCommands()
 
 	CommandList->MapAction(Commands.LinkPoints,
 		FUIAction(FExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::OnLinkPoints), FCanExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::CanLinkPoints)));
+
+	CommandList->MapAction(Commands.ClearLinks,
+		FUIAction(FExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::OnClearLinks), FCanExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::CanClearLinks)));
+
+	CommandList->MapAction(Commands.DeletePoints,
+		FUIAction(FExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::OnRemovePoints), FCanExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::CanRemovePoints)));
 }
 
 FAIPointContextEdMode* FAIPointContextEdModeToolkit::GetEditorMode() const
@@ -45,6 +51,8 @@ void FAIPointContextEdModeToolkit::BuildToolPalette(FName PaletteName, class FTo
 	//ToolbarBuilder.AddComboButton(Commands.ChangeType, FOnGetContent::CreateSP(this, &FAIPointContextEdModeToolkit::GetPointTypeSelector));
 	ToolbarBuilder.AddToolBarButton(Commands.AddPoint);
 	ToolbarBuilder.AddToolBarButton(Commands.LinkPoints);
+	ToolbarBuilder.AddToolBarButton(Commands.ClearLinks);
+	ToolbarBuilder.AddToolBarButton(Commands.DeletePoints);
 	ToolbarBuilder.AddSeparator();
 	ToolbarBuilder.EndSection();
 }
@@ -65,7 +73,13 @@ void FAIPointContextEdModeToolkit::OnAddPoint()
 
 bool FAIPointContextEdModeToolkit::CanAddPoint() const
 {
-	return true;
+	FAIPointContextEdMode* EdMode = GetEditorMode();
+	if (EdMode)
+	{
+		return EdMode->GetSelectedTargetPointActor() != nullptr;
+	}
+
+	return false;
 }
 
 void FAIPointContextEdModeToolkit::OnLinkPoints()
@@ -83,7 +97,47 @@ bool FAIPointContextEdModeToolkit::CanLinkPoints() const
 	if (EdMode)
 	{
 		return EdMode->CanCreateLink();
-	};
+	}
 
+	return false;
+}
+
+void FAIPointContextEdModeToolkit::OnClearLinks()
+{
+	FAIPointContextEdMode* EdMode = GetEditorMode();
+	if (EdMode)
+	{
+		return EdMode->ClearLinks();
+	};
+}
+
+bool FAIPointContextEdModeToolkit::CanClearLinks() const
+{
+	FAIPointContextEdMode* EdMode = GetEditorMode();
+	if (EdMode)
+	{
+		return EdMode->CanClearLinks();
+	}
+
+	return false;
+}
+
+void FAIPointContextEdModeToolkit::OnRemovePoints()
+{
+	FAIPointContextEdMode* EdMode = GetEditorMode();
+	if (EdMode)
+	{
+		EdMode->RemovePoints();
+	}
+	
+}
+
+bool FAIPointContextEdModeToolkit::CanRemovePoints() const
+{
+	FAIPointContextEdMode* EdMode = GetEditorMode();
+	if (EdMode)
+	{
+		return EdMode->CanRemovePoints();
+	}
 	return false;
 }

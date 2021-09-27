@@ -44,6 +44,20 @@ int32 AAIPointContextManager::AddPatrolPointToSection(FVector Point, int32 Secti
 	return NewIndex;
 }
 
+void AAIPointContextManager::RemovePatrolPointFromSection(int32 Index, int32 Section)
+{
+	if(!IsValid(Index, Section))
+		return;
+
+	FPatrolPointData& Data = PatrolSections[Section].PatrolPoints[Index];
+	RemoveLink(Data.Index, Section, Unlink_Both);
+	PatrolSections[Section].PatrolPoints.RemoveAt(Data.Index);
+	if (PatrolSections[Section].PatrolPoints.Num() == 0)
+	{
+		PatrolSections.RemoveAt(Section);
+	}
+}
+
 void AAIPointContextManager::LinkPatrolPoints(int32 FromPointIndex, int32 ToPointIndex, int32 Section, bool bLinkBothWays /*= false*/)
 {
 	// check if the section and index are valid
