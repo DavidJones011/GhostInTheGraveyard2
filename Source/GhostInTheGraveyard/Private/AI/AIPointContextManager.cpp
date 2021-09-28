@@ -88,12 +88,12 @@ void AAIPointContextManager::RemoveLink(int32 PointIndex, int32 Section, EUnlink
 	FPatrolPointData& Data = PatrolSections[Section].PatrolPoints[PointIndex];
 	if (UnlinkType == EUnlinkPoints::Unlink_Next || UnlinkType == EUnlinkPoints::Unlink_Both)
 	{
-		FPatrolPointData NextData;
-		if (TryGetPatrolPointData(Data.NextLinkIndex, Section, NextData))
+		if (IsValid(Section, Data.NextLinkIndex))
 		{
-			if (NextData.PriorLinkIndex == PointIndex)
+			int32& PriorIndex = PatrolSections[Section].PatrolPoints[Data.NextLinkIndex].PriorLinkIndex;
+			if (PriorIndex == PointIndex)
 			{
-				NextData.PriorLinkIndex = -1;
+				PriorIndex = -1;
 			}
 		}
 		Data.NextLinkIndex = -1;
@@ -101,12 +101,12 @@ void AAIPointContextManager::RemoveLink(int32 PointIndex, int32 Section, EUnlink
 
 	if (UnlinkType == EUnlinkPoints::Unlink_Prior || UnlinkType == EUnlinkPoints::Unlink_Both)
 	{
-		FPatrolPointData PriorData;
-		if (TryGetPatrolPointData(Data.PriorLinkIndex, Section, PriorData))
+		if (IsValid(Section, Data.PriorLinkIndex))
 		{
-			if (PriorData.NextLinkIndex == PointIndex)
+			int32& NextIndex = PatrolSections[Section].PatrolPoints[Data.PriorLinkIndex].NextLinkIndex;
+			if (NextIndex == PointIndex)
 			{
-				PriorData.NextLinkIndex = -1;
+				NextIndex = -1;
 			}
 		}
 		Data.PriorLinkIndex = -1;

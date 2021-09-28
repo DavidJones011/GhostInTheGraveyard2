@@ -100,7 +100,6 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 		if(Actor)
 		{
 			FVector ActorLoc = Actor->GetTargetLocation();
-
 // 			if (!bHiddenSearchPoints)
 // 			{
 // 				for (int i = 0; i < Actor->SearchPoints.Num(); ++i)
@@ -116,7 +115,6 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 // 					}
 // 				}
 // 			}
-
 			if (!bHiddenPatrolPoints)
 			{
 				int32 SectionNum = Actor->GetPatrolSectionNum();
