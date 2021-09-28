@@ -45,6 +45,9 @@ public:
 	virtual void Enter() override;
 	virtual void Exit() override;
 
+	/** FGCObject interface */
+	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 	/* Performs the rendering in the viewport */
 	virtual void Render(const FSceneView* View, FViewport* Viewport, FPrimitiveDrawInterface* PDI);
 	/* Handles clicking on items in viewport */
@@ -108,5 +111,7 @@ private:
 	bool bHiddenSoundTransferPoints = false;
 	bool bHiddenPatrolPoints = false;
 	float DebugRenderDistance = 800.0F;
-	TArray<FColor, TInlineAllocator<3>> SphereColors = { FColor(51,255,51), FColor(255, 51, 153), FColor(255,255,51)};
+	
+	bool bDataChanged = false;
+	//TArray<FColor, TInlineAllocator<3>> SphereColors = { FColor(51,255,51), FColor(255, 51, 153), FColor(255,255,51)};
 };

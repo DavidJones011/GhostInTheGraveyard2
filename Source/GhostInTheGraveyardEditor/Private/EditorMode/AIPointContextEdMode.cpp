@@ -8,18 +8,26 @@
 #include "EngineUtils.h"
 #include "PrimitiveSceneProxy.h"
 #include "EditorMode/AIPointContextEditorObject.h"
+#include "EditorMode/AIPointContextEditor.h"
 
 FAIPointContextEdMode::FAIPointContextEdMode()
+: FEdMode()
+, UISettings(nullptr)
+, bIsMultiSelecting(false)
+, bDataChanged(false)
 {
 	FAIPointContextEditorCommands::Register();
 	AIPointContextEdModeActions = MakeShareable(new FUICommandList);
 
-	UISettings = NewObject<UAIPointContextEditorObject>(GetTransientPackage(), TEXT("UISettings"), RF_Transactional);
+	//FAIPointContextEditor& AIContextPointModule = FModuleManager::GetModuleChecked<FAIPointContextEditor>("AI Point Context Editor");
+
+	UISettings = NewObject<UAIPointContextEditorObject>(GetTransientPackage(), TEXT("UISettings_AIPointContext"), RF_Transactional);
 	UISettings->SetParent(this);
 }
 
 FAIPointContextEdMode::~FAIPointContextEdMode()
 {
+	Selection.Empty();
 	FAIPointContextEditorCommands::Unregister();
 }
 
@@ -37,7 +45,6 @@ void FAIPointContextEdMode::Enter()
 		Toolkit->Init(Owner->GetToolkitHost());
 	}
 
-	// reset target
 	Selection.Empty();
 
 	// automatically selects the first manager found
@@ -61,11 +68,24 @@ void FAIPointContextEdMode::Enter()
 
 void FAIPointContextEdMode::Exit()
 {
-	FToolkitManager::Get().CloseToolkit(Toolkit.ToSharedRef());
-	Toolkit.Reset();
+	if (Toolkit.IsValid())
+	{
+		FToolkitManager::Get().CloseToolkit(Toolkit.ToSharedRef());
+		Toolkit.Reset();
+	}
 	Selection.Empty();
+	GEditor->SelectNone(false, true);
+
+	// Redraw one last time to remove any landscape editor stuff from view
+	GEditor->RedrawLevelEditingViewports();
 
 	FEdMode::Exit();
+}
+
+void FAIPointContextEdMode::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	FEdMode::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(UISettings);
 }
 
 void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, FPrimitiveDrawInterface* PDI)
@@ -102,12 +122,21 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 				int32 SectionNum = Actor->GetPatrolSectionNum();
 				for (int32 Section = 0; Section < SectionNum; Section++)
 				{
+					if (bDataChanged) // data has changed render next frame
+					{
+						bDataChanged = false;
+						return;
+					}
+
 					const TArray<FPatrolPointData>* PatrolData = Actor->GetPatrolPointData(Section);
 					TArray<bool> Marked;
 					Marked.AddZeroed(PatrolData->Num());
 					TArray<int32> TraversalStack;
 					for (int32 Index = 0; Index < PatrolData->Num(); Index++)
 					{
+						if (bDataChanged) // data has changed render next frame
+							return;
+
 						if(Marked[Index]) // already marked
 							continue;
 
@@ -115,6 +144,12 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 
 						while (TraversalStack.Num() > 0)
 						{
+							if (bDataChanged) // data has changed render next frame
+							{
+								bDataChanged = false;
+								return;
+							}
+
 							int32 Top = TraversalStack.Pop();
 							const FPatrolPointData& Data = (*PatrolData)[Top];
 							Marked[Top] = true;
@@ -123,7 +158,7 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 								//&& Data.SectionId == CurrentPatrolSection && CurrentSelectedPointType == EPointType::Patrol);
 
 							bool bSelected = false;
-							const FColor& Color = bSelected ? SelectedColor : SphereColors[1];
+							const FColor& Color = bSelected ? SelectedColor : FColor::Magenta;
 							const FVector& Point = Data.Location;
 
 							if (Data.PriorLinkIndex != -1)
@@ -389,6 +424,7 @@ void FAIPointContextEdMode::AddPoint(EPointType PointType)
 		}
 
 		Manager->Modify();
+		bDataChanged = true;
 	}
 }
 
@@ -413,6 +449,7 @@ void FAIPointContextEdMode::RemovePoints()
 		}
 		Manager->Modify();
 		Selection.Empty();
+		bDataChanged = true;
 	}
 }
 
@@ -501,6 +538,7 @@ void FAIPointContextEdMode::CreateLink()
 			PriorData = SelectData;
 		}
 		Manager->Modify();
+		bDataChanged = true;
 	}
 }
 
@@ -523,6 +561,7 @@ void FAIPointContextEdMode::ClearLinks()
 			Manager->RemoveLink(SelectData.CurrentSelectedIndex, SelectData.Section, Unlink_Both);
 		}
 		Manager->Modify();
+		bDataChanged = true;
 	}
 }
 
@@ -608,11 +647,11 @@ void FAIPointContextEdMode::ClearSearchPoints()
 	if (Manager)
 	{
 		const FScopedTransaction Transaction(FText::FromString("Clear Search Points"));
-		Manager->Modify();
 		Manager->SearchPoints.Empty();
+		bDataChanged = true;
+		SelectPoint(nullptr, -1, EPointType::Search);
+		Manager->Modify();
 	}
-
-	SelectPoint(nullptr, -1, EPointType::Search);
 }
 
 bool FAIPointContextEdMode::SelectionSharesSame(bool bCompareSection /*= false*/) const
