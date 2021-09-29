@@ -651,7 +651,6 @@ void FAIPointContextEdMode::SelectPoint(AAIPointContextManager* Actor, int32 Ind
 		else
 		{
 			bHasSelectionLoop = false;
-			return;
 		}
 	}
 
@@ -664,8 +663,16 @@ void FAIPointContextEdMode::SelectPoint(AAIPointContextManager* Actor, int32 Ind
 	}
 	else
 	{
-		SectionRenderData[SelectData.Section].PointRenderData[SelectData.CurrentSelectedIndex].bSelected = true;
-		Selection.Push(MoveTemp(SelectData));
+		if (bAlreadySelected)
+		{
+			SectionRenderData[SelectData.Section].PointRenderData[Selection[OutIndex].CurrentSelectedIndex].bSelected = false;
+			Selection.RemoveAt(OutIndex);
+		}
+		else
+		{
+			SectionRenderData[SelectData.Section].PointRenderData[SelectData.CurrentSelectedIndex].bSelected = true;
+			Selection.Push(MoveTemp(SelectData));
+		}
 	}
 
 	// select this actor only
