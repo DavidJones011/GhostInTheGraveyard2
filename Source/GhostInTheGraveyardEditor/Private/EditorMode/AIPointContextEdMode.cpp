@@ -14,7 +14,7 @@ FAIPointContextEdMode::FAIPointContextEdMode()
 : FEdMode()
 , UISettings(nullptr)
 , bIsMultiSelecting(false)
-, bDataChanged(false)
+, bHasSelectionLoop(false)
 {
 	FAIPointContextEditorCommands::Register();
 	AIPointContextEdModeActions = MakeShareable(new FUICommandList);
@@ -59,11 +59,37 @@ void FAIPointContextEdMode::Enter()
 		}
 	}
 
-// 	if (Manager)
-// 	{
-// 		//SelectPoint(Manager, Manager->SearchPoints.Num() - 1, EPointType::Search);
-// 		//CurrentSelectedTarget = Manager;
-// 	}
+	InitializeRenderData(Manager);
+	SelectPoint(Manager, -1, EPointType::Patrol);
+}
+
+void FAIPointContextEdMode::InitializeRenderData(AAIPointContextManager* Manager)
+{
+	if(Manager == nullptr)
+		return;
+
+	const int32 SectionNum = Manager->GetPatrolSectionNum();
+	for (int32 Section = 0; Section < SectionNum; Section++)
+	{
+		const int32 PointNum = Manager->GetPatrolSectionPatrolNum(Section);
+
+		PatrolSectionRenderData NewSectionRender;
+		AssignSectionColor(Section, NewSectionRender.SectionColor);
+		NewSectionRender.SectionID = Section;
+
+		for (int32 Index = 0; Index < PointNum; Index++)
+		{
+			FPatrolPointData Data;
+			Manager->TryGetPatrolPointData(Index, Section, Data);
+
+			PatrolPointRenderData NewData;
+			NewData.PointIndex = Data.Index;
+			NewData.Section = Data.SectionId;
+
+			NewSectionRender.PointRenderData.Add(NewData);
+		}
+		SectionRenderData.Add(NewSectionRender);
+	}
 }
 
 void FAIPointContextEdMode::Exit()
@@ -80,6 +106,28 @@ void FAIPointContextEdMode::Exit()
 	GEditor->RedrawLevelEditingViewports();
 
 	FEdMode::Exit();
+}
+
+void FAIPointContextEdMode::AssignSectionColor(int32 SectionNum, FColor& OutColor)
+{
+	if (SectionRenderData.IsValidIndex(SectionNum))
+	{
+		FColor NewColor = FColor::MakeRandomColor();
+		if(!ColorAlreadyAssignedToSection(NewColor))
+		{
+			OutColor = NewColor;
+		}
+	}
+}
+
+bool FAIPointContextEdMode::ColorAlreadyAssignedToSection(const FColor& InColor) const
+{
+	for (const PatrolSectionRenderData& Data : SectionRenderData)
+	{
+		if(Data.SectionColor == InColor)
+			return true;
+	}
+	return false;
 }
 
 void FAIPointContextEdMode::AddReferencedObjects(FReferenceCollector& Collector)
@@ -100,55 +148,91 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 		if(Actor)
 		{
 			FVector ActorLoc = Actor->GetTargetLocation();
-// 			if (!bHiddenSearchPoints)
-// 			{
-// 				for (int i = 0; i < Actor->SearchPoints.Num(); ++i)
-// 				{
-// 					bool bSelected = (Actor == CurrentSelectedTarget && i == CurrentSelectedIndex);
-// 					const FColor& Color = bSelected ? SelectedColor : SphereColors[0];
-// 					FVector& Point = Actor->SearchPoints[i];				
-// 					if (FVector::DistSquared(Point, View->ViewLocation) <= DebugDrawDistSquared)
-// 					{
-// 						PDI->SetHitProxy(new HAIPointContextProxy(Actor, i, EPointType::Search, -1));
-// 						DrawWireSphere(PDI, FTransform(Point), Color, DebugSphereRadius, 10, SDPG_Foreground);
-// 						PDI->SetHitProxy(NULL);
-// 					}
-// 				}
-// 			}
 			if (!bHiddenPatrolPoints)
 			{
-				int32 SectionNum = Actor->GetPatrolSectionNum();
-				for (int32 Section = 0; Section < SectionNum; Section++)
+				//int32 SectionNum = Actor->GetPatrolSectionNum();
+
+				TArray<int32> SectionPendingRemoval;
+				int32 SectionsToRenderNum = SectionRenderData.Num();
+				for (int32 Section = 0; Section < SectionsToRenderNum; Section++)
 				{
-					if (bDataChanged) // data has changed render next frame
+					PatrolSectionRenderData& Sect = SectionRenderData[Section];
+
+					// don't render if it is being removed
+					if (Sect.bPendingRemoval)
 					{
-						bDataChanged = false;
-						return;
+						SectionPendingRemoval.Push(Section);
+						continue;
 					}
 
-					const TArray<FPatrolPointData>* PatrolData = Actor->GetPatrolPointData(Section);
-					TArray<bool> Marked;
-					Marked.AddZeroed(PatrolData->Num());
+					//const TArray<FPatrolPointData>* PatrolData = Actor->GetPatrolPointData(Section);
+					TArray<int32> PendingRemoval;
+					TArray<bool> Visited;
+					Visited.AddZeroed(Sect.PointRenderData.Num());
 					TArray<int32> TraversalStack;
-					for (int32 Index = 0; Index < PatrolData->Num(); Index++)
-					{
-						if (bDataChanged) // data has changed render next frame
-							return;
-
-						if(Marked[Index]) // already marked
+					for (int32 Index = 0; Index < Sect.PointRenderData.Num(); Index++)
+					{					
+						if(Visited[Index]) // already marked
 							continue;
 
 						TraversalStack.Push(Index);
 
 						while (TraversalStack.Num() > 0)
 						{
-							if (bDataChanged) // data has changed render next frame
+							const int32 Top = TraversalStack.Pop();
+							const PatrolPointRenderData& PointRenderData = Sect.PointRenderData[Top];
+							Visited[Top] = true;
+							if (PointRenderData.bPendingRemoval)
 							{
-								bDataChanged = false;
-								return;
+								PendingRemoval.Push(PointRenderData.PointIndex);
+								continue;
 							}
 
-							int32 Top = TraversalStack.Pop();
+							FPatrolPointData PointData;
+							Actor->TryGetPatrolPointData(PointRenderData.PointIndex, Section, PointData);
+
+							FColor RenderColor = PointRenderData.bSelected ? FColor::White : Sect.SectionColor;
+							const FVector& Point = PointData.Location;
+
+							// check prior neighbor
+							if (Actor->IsValid(Section, PointData.PriorLinkIndex))
+							{
+								const PatrolPointRenderData& PriorPointRenderData = Sect.PointRenderData[PointData.PriorLinkIndex];
+								if (!PriorPointRenderData.bPendingRemoval)
+								{
+									FPatrolPointData PriorData;
+									if (!Visited[PointData.PriorLinkIndex] && Actor->TryGetPatrolPointData(PointData.PriorLinkIndex, PointData.SectionId, PriorData))
+									{
+										TraversalStack.Push(PointData.PriorLinkIndex);
+										PDI->DrawLine(PointData.Location, PriorData.Location, Sect.SectionColor, SDPG_Foreground);
+									}
+								}
+							}
+
+							// check next neighbor
+							if (Actor->IsValid(Section, PointData.NextLinkIndex))
+							{
+								const PatrolPointRenderData& NextPointRenderData = Sect.PointRenderData[PointData.NextLinkIndex];
+								if (!NextPointRenderData.bPendingRemoval)
+								{
+									FPatrolPointData NextData;
+									if (!Visited[PointData.NextLinkIndex] && Actor->TryGetPatrolPointData(PointData.NextLinkIndex, PointData.SectionId, NextData))
+									{
+										TraversalStack.Push(PointData.NextLinkIndex);
+										PDI->DrawLine(PointData.Location, NextData.Location, Sect.SectionColor, SDPG_Foreground);
+									}
+								}
+							}
+
+							FPlane ViewPlane = View->Project(Point);
+							if (ViewPlane.X >= -1 && ViewPlane.X <= 1 && ViewPlane.Y >= -1 && ViewPlane.Y <= 1 && FVector::DistSquared(Point, View->ViewLocation) <= DebugDrawDistSquared)
+							{
+								PDI->SetHitProxy(new HAIPointContextProxy(Actor, PointData.Index, EPointType::Patrol, PointData.SectionId));
+								DrawWireSphere(PDI, FTransform(Point), RenderColor, DebugSphereRadius, 10, SDPG_Foreground);
+								PDI->SetHitProxy(NULL);
+							}
+
+							/*int32 Top = TraversalStack.Pop();
 							const FPatrolPointData& Data = (*PatrolData)[Top];
 							Marked[Top] = true;
 
@@ -187,9 +271,35 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 								PDI->SetHitProxy(new HAIPointContextProxy(Actor, Data.Index, EPointType::Patrol, Data.SectionId));
 								DrawWireSphere(PDI, FTransform(Point), Color, DebugSphereRadius, 10, SDPG_Foreground);
 								PDI->SetHitProxy(NULL);
-							}
+							}*/
 						}
 					}
+
+					//remove pending patrol points
+					int32 RemoveAmount = PendingRemoval.Num();
+					if (RemoveAmount > 0)
+					{
+						while (PendingRemoval.Num() > 0)
+						{
+							const int32 Top = PendingRemoval.Pop();
+							Sect.PointRenderData.RemoveAt(Top);
+						}
+
+						// update the indicies
+						int32 PatrolPointNum = SectionRenderData[Section].PointRenderData.Num();
+						for (int32 UpdateIndex = 0; UpdateIndex < PatrolPointNum; UpdateIndex++)
+						{
+							PatrolPointRenderData& Data = SectionRenderData[Section].PointRenderData[UpdateIndex];
+							Data.PointIndex -= RemoveAmount;
+						}
+					}
+				}
+
+				// remove sections
+				while (SectionPendingRemoval.Num() > 0)
+				{
+					const int32 Top = SectionPendingRemoval.Pop();
+					SectionRenderData.RemoveAt(Top);
 				}
 			}
 		}
@@ -247,6 +357,11 @@ bool FAIPointContextEdMode::HandleClick(FEditorViewportClient* InViewportClient,
 				FPopupTransitionEffect(FPopupTransitionEffect::ContextMenu)
 			);
 		}
+	}
+
+	if (!HitProxy)
+	{
+		SelectPoint(nullptr, -1, EPointType::Patrol);
 	}
 
 	return bHandled;
@@ -380,7 +495,7 @@ void FAIPointContextEdMode::AddPoint(EPointType PointType)
 		const FScopedTransaction Transaction(FText::FromString("Add Point"));
 
 		FEditorViewportClient* Client = (FEditorViewportClient*)GEditor->GetActiveViewport()->GetClient();
-		// cast a ray to place sphere on geometry
+		// cast a ray to place point on geometry
 		const FVector StartLocation = Client->GetViewLocation();
 		const FVector EndLocation = Client->GetViewRotation().Vector() * 2000.0F;
 		FHitResult HitResult;
@@ -392,24 +507,42 @@ void FAIPointContextEdMode::AddPoint(EPointType PointType)
 			NewPoint = Client->GetViewLocation() + (Client->GetViewRotation().Vector() * DebugSphereRadius);
 		
 
+		// checks to see if we have a section selected
 		int32 SelectDataSection = -1;
 		if (Selection.Num() > 0)
 		{
 			SelectDataSection = Selection[Selection.Num() - 1].Section;
 		}
 
+		// add point to manager
 		switch (PointType)
 		{
 			case EPointType::Patrol:
 				if (SelectDataSection != -1)
 				{				
 					int32 Index = Manager->AddPatrolPointToSection(NewPoint, SelectDataSection);
+					PatrolPointRenderData NewData;
+					NewData.PointIndex = Index;
+					NewData.Section = SelectDataSection;
+					SectionRenderData[SelectDataSection].PointRenderData.Add(NewData);
 					SelectPoint(Manager, Index, PointType, SelectDataSection);
 				}
 				else
 				{
-					//CurrentPatrolSection = Manager->CreatePatrolSection(NewPoint);
-					SelectPoint(Manager, 0, PointType, Manager->CreatePatrolSection(NewPoint));
+					// create new section and render object
+					int32 SectionIndex = Manager->CreatePatrolSection(NewPoint);
+
+					PatrolSectionRenderData NewSectionRender;
+					AssignSectionColor(SectionIndex, NewSectionRender.SectionColor);
+					NewSectionRender.SectionID = SectionIndex;
+
+					PatrolPointRenderData NewData;
+					NewData.PointIndex = 0;
+					NewData.Section = SectionIndex;
+
+					NewSectionRender.PointRenderData.Add(NewData);
+					SectionRenderData.Add(NewSectionRender);
+					SelectPoint(Manager, 0, PointType, SectionIndex);
 				}
 				break;
 			case EPointType::Search:
@@ -422,12 +555,7 @@ void FAIPointContextEdMode::AddPoint(EPointType PointType)
 		}
 
 		Manager->Modify();
-		bDataChanged = true;
 	}
-}
-
-void FAIPointContextEdMode::AddPointAtLocation(FVector Location, EPointType PointType)
-{
 }
 
 bool FAIPointContextEdMode::CanAddPoint(EPointType PointType) const
@@ -443,17 +571,33 @@ void FAIPointContextEdMode::RemovePoints()
 		const FScopedTransaction Transaction(FText::FromString("Remove Point"));
 		for (const SelectionData& SelectData : Selection)
 		{
+			SectionRenderData[SelectData.Section].PointRenderData[SelectData.CurrentSelectedIndex].bPendingRemoval = true;
 			Manager->RemovePatrolPointFromSection(SelectData.CurrentSelectedIndex, SelectData.Section);
+
+			if(ShouldRemoveSection(SelectData.Section))
+				SectionRenderData[SelectData.Section].bPendingRemoval = true;
 		}
 		Manager->Modify();
 		Selection.Empty();
-		bDataChanged = true;
 	}
+}
+
+// could be more performant TODO:: track number of marked points for deletion
+bool FAIPointContextEdMode::ShouldRemoveSection(int32 Section) const 
+{
+	for (const PatrolPointRenderData& Data : SectionRenderData[Section].PointRenderData)
+	{
+		if (!Data.bPendingRemoval)
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 bool FAIPointContextEdMode::CanRemovePoints() const
 {
-	if (Selection.Num() == 0 || !HasValidSelection())
+	if (Selection.Num() == 0 || !HasValidSelection() )
 		return false;
 
 	return true;
@@ -484,32 +628,44 @@ bool FAIPointContextEdMode::HasValidSelection() const
 
 void FAIPointContextEdMode::SelectPoint(AAIPointContextManager* Actor, int32 Index, EPointType PointType, int32 Section /*=-1*/ )
 {
+	if (Actor == nullptr || Index == -1)
+	{
+		ClearSelection();
+		return;
+	}
+
 	SelectionData SelectData;
 	SelectData.CurrentSelectedIndex = Index;
 	SelectData.CurrentSelectedTarget = Actor;
 	SelectData.CurrentSelectedPointType = PointType;
 	SelectData.Section = Section;
 
-	if (Selection.Num() > 1 && !bIsMultiSelecting)
+	int32 OutIndex = -1;
+	bool bAlreadySelected = IsAlreadySelected(SelectData, OutIndex);
+
+	if (bAlreadySelected)
 	{
-		Selection.Empty();
+		if(OutIndex == 0 && Selection.Num() > 2)
+			bHasSelectionLoop = true;
+		else
+		{
+			bHasSelectionLoop = false;
+			return;
+		}
 	}
 
-	int32 OutIndex = 0;
-	if (IsAlreadySelected(SelectData, OutIndex))
+	if (!bIsMultiSelecting)
 	{
-		return;
-	}
-
-	if (Selection.Num() == 1 && !bIsMultiSelecting)
-	{
-		Selection[0] = MoveTemp(SelectData);
+		ClearSelection();
+		SectionRenderData[SelectData.Section].PointRenderData[SelectData.CurrentSelectedIndex].bSelected = true;
+		Selection.Push(MoveTemp(SelectData));
+		bHasSelectionLoop = false;
 	}
 	else
 	{
+		SectionRenderData[SelectData.Section].PointRenderData[SelectData.CurrentSelectedIndex].bSelected = true;
 		Selection.Push(MoveTemp(SelectData));
 	}
-
 
 	// select this actor only
 	TWeakObjectPtr<AAIPointContextManager> SelectedActor = Selection[Selection.Num() - 1].CurrentSelectedTarget;
@@ -520,14 +676,26 @@ void FAIPointContextEdMode::SelectPoint(AAIPointContextManager* Actor, int32 Ind
 	}
 }
 
+void FAIPointContextEdMode::ClearSelection()
+{
+	if (Selection.Num() > 0)
+	{
+		for (const SelectionData& SelectData : Selection)
+		{
+			SectionRenderData[SelectData.Section].PointRenderData[SelectData.CurrentSelectedIndex].bSelected = false;
+		}
+
+		Selection.Empty();
+	}
+	bHasSelectionLoop = false;
+}
+
 void FAIPointContextEdMode::CreateLink()
 {
-	const FScopedTransaction Transaction(FText::FromString("Link Points"));
-
 	AAIPointContextManager* Manager = GetSelectedTargetPointActor();
-
 	if (Manager && SelectionNum() > 1)
 	{
+		const FScopedTransaction Transaction(FText::FromString("Link Points"));
 		SelectionData* PriorData = &Selection[0];
 		for (int32 Index = 1; Index < Selection.Num(); Index++)
 		{
@@ -535,8 +703,14 @@ void FAIPointContextEdMode::CreateLink()
 			Manager->LinkPatrolPoints(PriorData->CurrentSelectedIndex, SelectData->CurrentSelectedIndex, SelectData->Section, true);
 			PriorData = SelectData;
 		}
+
+		if (bHasSelectionLoop)
+		{
+			SelectionData* FirstData = &Selection[0];
+			Manager->LinkPatrolPoints(PriorData->CurrentSelectedIndex, FirstData->CurrentSelectedIndex, FirstData->Section, true);
+		}
+
 		Manager->Modify();
-		bDataChanged = true;
 	}
 }
 
@@ -559,7 +733,6 @@ void FAIPointContextEdMode::ClearLinks()
 			Manager->RemoveLink(SelectData.CurrentSelectedIndex, SelectData.Section, Unlink_Both);
 		}
 		Manager->Modify();
-		bDataChanged = true;
 	}
 }
 
@@ -646,7 +819,6 @@ void FAIPointContextEdMode::ClearSearchPoints()
 	{
 		const FScopedTransaction Transaction(FText::FromString("Clear Search Points"));
 		Manager->SearchPoints.Empty();
-		bDataChanged = true;
 		SelectPoint(nullptr, -1, EPointType::Search);
 		Manager->Modify();
 	}

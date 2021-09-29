@@ -42,7 +42,7 @@ struct GHOSTINTHEGRAVEYARD_API FPatrolPointData
 	int32 NextLinkIndex = -1;
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct GHOSTINTHEGRAVEYARD_API FPatrolSection
 {
 	GENERATED_BODY()

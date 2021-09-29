@@ -6,6 +6,45 @@
 #include "AI/AIPointContextManager.h"
 
 class UAIPointContextEditorObject;
+struct FPatrolSection;
+struct FPatrolPointData;
+
+/**
+ * Used to draw the patrol point data
+ */
+struct PatrolPointRenderData
+{
+	PatrolPointRenderData()
+		: PointIndex(-1)
+		, Section(-1)
+		, bSelected(false)
+		, bPendingRemoval(false)
+	{
+	}
+
+	int32 PointIndex;
+	int32 Section;
+	bool bSelected = false;
+	bool bPendingRemoval = false;
+};
+
+/**
+ * Used to draw patrol sections
+ */
+struct PatrolSectionRenderData
+{
+	PatrolSectionRenderData()
+	: SectionID(-1)
+	, SectionColor(FColor())
+	, bPendingRemoval(false)
+	{
+	}
+
+	int32 SectionID;
+	FColor SectionColor;
+	bool bPendingRemoval;
+	TArray<PatrolPointRenderData> PointRenderData;
+};
 
 /**
  * Hit proxy so that points can be manipulated through the viewport editor.
@@ -43,7 +82,20 @@ public:
 	const static FEditorModeID EM_AIPointContext;
 
 	virtual void Enter() override;
+
+	virtual void InitializeRenderData(AAIPointContextManager* Manager);
+
 	virtual void Exit() override;
+
+	/*
+	* Get a random generated color for a new section.
+	*/
+	void AssignSectionColor(int32 SectionNum, FColor& OutColor);
+
+	/**
+	 * Checks to see if any patrol section has already been assigned a color.
+	 */
+	bool ColorAlreadyAssignedToSection(const FColor& InColor) const;
 
 	/** FGCObject interface */
 	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
@@ -65,15 +117,16 @@ public:
 
 	AAIPointContextManager* GetSelectedTargetPointActor() const;
 	void AddPoint(EPointType PointType);
-	void AddPointAtLocation(FVector Location, EPointType PointType);
 	bool CanAddPoint(EPointType PointType) const;
 
 	void RemovePoints();
+	bool ShouldRemoveSection(int32 Section) const;
 	bool CanRemovePoints() const;
 
 	bool HasValidSelection() const;
 	void SelectPoint(AAIPointContextManager* Actor, int32 Index, EPointType PointType, int32 Section = -1);
 
+	void ClearSelection();
 	void CreateLink();
 	bool CanCreateLink() const;
 
@@ -102,7 +155,10 @@ protected:
 	TSharedPtr<FUICommandList> AIPointContextEdModeActions;
 	TArray<SelectionData> Selection;
 
+	TArray<PatrolSectionRenderData> SectionRenderData;
+
 	bool bIsMultiSelecting = false;
+	bool bHasSelectionLoop = false;
 
 private:
 
@@ -111,7 +167,5 @@ private:
 	bool bHiddenSoundTransferPoints = false;
 	bool bHiddenPatrolPoints = false;
 	float DebugRenderDistance = 800.0F;
-	
-	bool bDataChanged = false;
 	//TArray<FColor, TInlineAllocator<3>> SphereColors = { FColor(51,255,51), FColor(255, 51, 153), FColor(255,255,51)};
 };
