@@ -23,6 +23,7 @@ FAIPointContextEdMode::FAIPointContextEdMode()
 
 	UISettings = NewObject<UAIPointContextEditorObject>(GetTransientPackage(), TEXT("UISettings_AIPointContext"), RF_Transactional);
 	UISettings->SetParent(this);
+	UISettings->Init();
 }
 
 FAIPointContextEdMode::~FAIPointContextEdMode()
