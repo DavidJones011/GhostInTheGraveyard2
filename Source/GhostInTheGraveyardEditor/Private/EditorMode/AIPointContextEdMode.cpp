@@ -75,7 +75,7 @@ void FAIPointContextEdMode::InitializeRenderData(AAIPointContextManager* Manager
 		const int32 PointNum = Manager->GetPatrolSectionPatrolNum(Section);
 
 		PatrolSectionRenderData NewSectionRender;
-		AssignSectionColor(Section, NewSectionRender.SectionColor);
+		AssignSectionColor(NewSectionRender.SectionColor);
 		NewSectionRender.SectionID = Section;
 
 		for (int32 Index = 0; Index < PointNum; Index++)
@@ -106,18 +106,17 @@ void FAIPointContextEdMode::Exit()
 	// Redraw one last time to remove any landscape editor stuff from view
 	GEditor->RedrawLevelEditingViewports();
 
+	SectionRenderData.Empty();
+
 	FEdMode::Exit();
 }
 
-void FAIPointContextEdMode::AssignSectionColor(int32 SectionNum, FColor& OutColor)
+void FAIPointContextEdMode::AssignSectionColor(FColor& OutColor)
 {
-	if (SectionRenderData.IsValidIndex(SectionNum))
+	FColor NewColor = FColor::MakeRandomColor();
+	if (!ColorAlreadyAssignedToSection(NewColor))
 	{
-		FColor NewColor = FColor::MakeRandomColor();
-		if(!ColorAlreadyAssignedToSection(NewColor))
-		{
-			OutColor = NewColor;
-		}
+		OutColor = NewColor;
 	}
 }
 
@@ -503,7 +502,7 @@ void FAIPointContextEdMode::AddPoint(EPointType PointType)
 					int32 SectionIndex = Manager->CreatePatrolSection(NewPoint);
 
 					PatrolSectionRenderData NewSectionRender;
-					AssignSectionColor(SectionIndex, NewSectionRender.SectionColor);
+					AssignSectionColor(NewSectionRender.SectionColor);
 					NewSectionRender.SectionID = SectionIndex;
 
 					PatrolPointRenderData NewData;

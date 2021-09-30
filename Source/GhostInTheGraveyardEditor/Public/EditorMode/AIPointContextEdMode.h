@@ -90,7 +90,7 @@ public:
 	/*
 	* Get a random generated color for a new section.
 	*/
-	void AssignSectionColor(int32 SectionNum, FColor& OutColor);
+	void AssignSectionColor(FColor& OutColor);
 
 	/**
 	 * Checks to see if any patrol section has already been assigned a color.
