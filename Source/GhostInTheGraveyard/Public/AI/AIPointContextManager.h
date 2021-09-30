@@ -127,6 +127,21 @@ public:
 	UFUNCTION()
 	bool TryGetPatrolPointData(int32 PointIndex, int32 SectionID, FPatrolPointData& Data) const;
 
+	/*
+	* Attempts to get a reference to the next patrol point data of a given index and section.
+	*/
+	UFUNCTION()
+	bool TryGetPatrolPointNextData(int32 PointIndex, int32 SectionID, FPatrolPointData& Data) const;
+
+	/*
+	* Attempts to get a reference to the next patrol point data of a given index and section.
+	*/
+	UFUNCTION()
+	bool TryGetPatrolPointPriorData(int32 PointIndex, int32 SectionID, FPatrolPointData& Data) const;
+
+	UFUNCTION()
+	bool TryGetClosestPatrolPointData(const FVector& Point, FPatrolPointData& Data);
+
 	/**
 	 * Get the number of patrol points in a patrol section.
 	 */

@@ -157,6 +157,71 @@ bool AAIPointContextManager::TryGetPatrolPointData(int32 PointIndex, int32 Secti
 	return false;
 }
 
+bool AAIPointContextManager::TryGetPatrolPointNextData(int32 PointIndex, int32 SectionID, FPatrolPointData& Data) const
+{
+	if (IsValid(SectionID, PointIndex))
+	{
+		int32 NextIndex = PatrolSections[SectionID].PatrolPoints[PointIndex].NextLinkIndex;
+		if (IsValid(SectionID, NextIndex))
+		{
+			Data = PatrolSections[SectionID].PatrolPoints[NextIndex];
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool AAIPointContextManager::TryGetPatrolPointPriorData(int32 PointIndex, int32 SectionID, FPatrolPointData& Data) const
+{
+	if (IsValid(SectionID, PointIndex))
+	{
+		int32 PriorIndex = PatrolSections[SectionID].PatrolPoints[PointIndex].PriorLinkIndex;
+		if (IsValid(SectionID, PriorIndex))
+		{
+			Data = PatrolSections[SectionID].PatrolPoints[PriorIndex];
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool AAIPointContextManager::TryGetClosestPatrolPointData(const FVector& Point, FPatrolPointData& Data)
+{
+	// this could be improved, bsp tree would work well
+	FPatrolPointData* BestData = nullptr;
+	float BestDistance = FLT_MAX;
+
+	for (int32 Section = 0; Section < PatrolSections.Num(); Section++)
+	{
+		const FPatrolSection& SectionData = PatrolSections[Section];
+		for (int32 Index = 0; Index < SectionData.PatrolPoints.Num(); Index++)
+		{
+			const FPatrolPointData* CurrentData = &(SectionData.PatrolPoints[Index]);
+			float DistSquared = FVector::DistSquared(Point, CurrentData->Location);
+			if (DistSquared < BestDistance)
+			{
+				BestDistance = DistSquared;
+				BestData = (FPatrolPointData*)CurrentData;
+			}
+		}
+	}
+
+	if (BestData != nullptr)
+	{
+		Data = *BestData;
+		return true;
+	}
+
+	Data.Index = -1;
+	Data.NextLinkIndex = -1;
+	Data.PriorLinkIndex = -1;
+	Data.Location = FVector::ZeroVector;
+	Data.SectionId = -1;
+	return false;
+}
+
 const TArray<FPatrolPointData>* AAIPointContextManager::GetPatrolPointData(int32 SectionID) const
 {
 	if (PatrolSections.IsValidIndex(SectionID))
