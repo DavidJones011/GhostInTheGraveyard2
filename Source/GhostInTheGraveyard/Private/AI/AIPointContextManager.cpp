@@ -55,6 +55,7 @@ void AAIPointContextManager::RemovePatrolPointFromSection(int32 Index, int32 Sec
 	if (PatrolSections[Section].PatrolPoints.Num() == 0)
 	{
 		PatrolSections.RemoveAt(Section);
+		return;
 	}
 
 	// update the indicies
@@ -62,11 +63,21 @@ void AAIPointContextManager::RemovePatrolPointFromSection(int32 Index, int32 Sec
 	for (int32 UpdateIndex = 0; UpdateIndex < PatrolPointNum; UpdateIndex++)
 	{
 		FPatrolPointData& Data = PatrolSections[Section].PatrolPoints[UpdateIndex];
-		Data.Index--;
-		if(Data.PriorLinkIndex != -1)
+		if (Data.Index >= Index)
+		{
+			Data.Index--;
+		}
+
+		if (Data.PriorLinkIndex != -1 && Data.PriorLinkIndex >= Index)
+		{
 			Data.PriorLinkIndex--;
-		if(Data.NextLinkIndex != -1)
+			Data.PriorLinkIndex = (Data.PriorLinkIndex == Data.Index) ? -1 : Data.PriorLinkIndex;
+		}
+		if (Data.NextLinkIndex != -1 && Data.NextLinkIndex >= Index)
+		{
 			Data.NextLinkIndex--;
+			Data.NextLinkIndex = (Data.NextLinkIndex == Data.Index) ? -1 : Data.NextLinkIndex;
+		}
 	}
 }
 

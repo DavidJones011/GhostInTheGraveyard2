@@ -151,8 +151,6 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 			FVector ActorLoc = Actor->GetTargetLocation();
 			if (!bHiddenPatrolPoints)
 			{
-				//int32 SectionNum = Actor->GetPatrolSectionNum();
-
 				TArray<int32> SectionPendingRemoval;
 				int32 SectionsToRenderNum = SectionRenderData.Num();
 				for (int32 Section = 0; Section < SectionsToRenderNum; Section++)
@@ -166,7 +164,6 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 						continue;
 					}
 
-					//const TArray<FPatrolPointData>* PatrolData = Actor->GetPatrolPointData(Section);
 					TArray<int32> PendingRemoval;
 					TArray<bool> Visited;
 					Visited.AddZeroed(Sect.PointRenderData.Num());
@@ -232,47 +229,6 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 								DrawWireSphere(PDI, FTransform(Point), RenderColor, DebugSphereRadius, 10, SDPG_Foreground);
 								PDI->SetHitProxy(NULL);
 							}
-
-							/*int32 Top = TraversalStack.Pop();
-							const FPatrolPointData& Data = (*PatrolData)[Top];
-							Marked[Top] = true;
-
-							//bool bSelected = (Actor == CurrentSelectedTarget && Data.Index == CurrentSelectedIndex
-								//&& Data.SectionId == CurrentPatrolSection && CurrentSelectedPointType == EPointType::Patrol);
-
-							bool bSelected = false;
-							const FColor& Color = bSelected ? SelectedColor : FColor::Magenta;
-							const FVector& Point = Data.Location;
-
-							if (Data.PriorLinkIndex != -1)
-							{
-								FPatrolPointData PriorData;
-								if (!Marked[Data.PriorLinkIndex] && Actor->TryGetPatrolPointData(Data.PriorLinkIndex, Data.SectionId, PriorData))
-								{						
-									TraversalStack.Push(Data.PriorLinkIndex);
-									PDI->DrawLine(Data.Location, PriorData.Location, Color, SDPG_Foreground);
-									//DrawConnectedArrow(PDI, FTransform(PriorData.Location - Data.Location).ToMatrixNoScale(), Color, 50.0F, 50.0F, SDPG_Foreground);
-								}
-							}
-
-							if (Data.NextLinkIndex != -1)
-							{								
-								FPatrolPointData NextData;
-								if (!Marked[Data.NextLinkIndex] && Actor->TryGetPatrolPointData(Data.NextLinkIndex, Data.SectionId, NextData))
-								{
-									TraversalStack.Push(Data.NextLinkIndex);
-									PDI->DrawLine(Data.Location, NextData.Location, Color, SDPG_Foreground);
-									//DrawConnectedArrow(PDI, FTransform(NextData.Location - Data.Location).ToMatrixNoScale(), Color, 50.0F, 50.0F, SDPG_Foreground);
-								}
-							}
-
-							FPlane ViewPlane = View->Project(Point);
-							if (ViewPlane.X >= -1 && ViewPlane.X <= 1 && ViewPlane.Y >= -1 && ViewPlane.Y <= 1 && FVector::DistSquared(Point, View->ViewLocation) <= DebugDrawDistSquared)
-							{
-								PDI->SetHitProxy(new HAIPointContextProxy(Actor, Data.Index, EPointType::Patrol, Data.SectionId));
-								DrawWireSphere(PDI, FTransform(Point), Color, DebugSphereRadius, 10, SDPG_Foreground);
-								PDI->SetHitProxy(NULL);
-							}*/
 						}
 					}
 
@@ -284,23 +240,36 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 						{
 							const int32 Top = PendingRemoval.Pop();
 							Sect.PointRenderData.RemoveAt(Top);
-						}
 
-						// update the indicies
-						int32 PatrolPointNum = SectionRenderData[Section].PointRenderData.Num();
-						for (int32 UpdateIndex = 0; UpdateIndex < PatrolPointNum; UpdateIndex++)
-						{
-							PatrolPointRenderData& Data = SectionRenderData[Section].PointRenderData[UpdateIndex];
-							Data.PointIndex -= RemoveAmount;
+							// update the indicies
+							int32 PatrolPointNum = SectionRenderData[Section].PointRenderData.Num();
+							for (int32 UpdateIndex = Top; UpdateIndex < PatrolPointNum; UpdateIndex++)
+							{
+								PatrolPointRenderData& Data = SectionRenderData[Section].PointRenderData[UpdateIndex];
+								Data.PointIndex--;
+							}
 						}
 					}
 				}
 
 				// remove sections
-				while (SectionPendingRemoval.Num() > 0)
+				int32 SectionRemoveAmount = SectionPendingRemoval.Num();
+				if (SectionRemoveAmount > 0)
 				{
-					const int32 Top = SectionPendingRemoval.Pop();
-					SectionRenderData.RemoveAt(Top);
+					while (SectionPendingRemoval.Num() > 0)
+					{
+						const int32 Top = SectionPendingRemoval.Pop();
+						SectionRenderData.RemoveAt(Top);
+
+						// update the section ids 
+						int32 SectionNum = SectionRenderData.Num();
+						for (int32 UpdateID = Top; UpdateID < SectionNum; UpdateID++)
+						{
+							PatrolSectionRenderData& Data = SectionRenderData[UpdateID];
+							if (Data.SectionID != UpdateID)
+								Data.SectionID = UpdateID;
+						}
+					}
 				}
 			}
 		}
@@ -570,30 +539,20 @@ void FAIPointContextEdMode::RemovePoints()
 	if (Manager)
 	{
 		const FScopedTransaction Transaction(FText::FromString("Remove Point"));
+
+		int32 PendingRemovalNum = 0;
 		for (const SelectionData& SelectData : Selection)
 		{
 			SectionRenderData[SelectData.Section].PointRenderData[SelectData.CurrentSelectedIndex].bPendingRemoval = true;
+			PendingRemovalNum++;
 			Manager->RemovePatrolPointFromSection(SelectData.CurrentSelectedIndex, SelectData.Section);
 
-			if(ShouldRemoveSection(SelectData.Section))
+			if(PendingRemovalNum == SectionRenderData[SelectData.Section].PointRenderData.Num())
 				SectionRenderData[SelectData.Section].bPendingRemoval = true;
 		}
 		Manager->Modify();
 		Selection.Empty();
 	}
-}
-
-// could be more performant TODO:: track number of marked points for deletion
-bool FAIPointContextEdMode::ShouldRemoveSection(int32 Section) const 
-{
-	for (const PatrolPointRenderData& Data : SectionRenderData[Section].PointRenderData)
-	{
-		if (!Data.bPendingRemoval)
-		{
-			return false;
-		}
-	}
-	return true;
 }
 
 bool FAIPointContextEdMode::CanRemovePoints() const

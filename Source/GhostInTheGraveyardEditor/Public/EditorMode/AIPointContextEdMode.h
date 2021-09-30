@@ -120,7 +120,6 @@ public:
 	bool CanAddPoint(EPointType PointType) const;
 
 	void RemovePoints();
-	bool ShouldRemoveSection(int32 Section) const;
 	bool CanRemovePoints() const;
 
 	bool HasValidSelection() const;
