@@ -23,5 +23,11 @@
 				"GameplayDebugger"
 			]
 		}
+	],
+	"Plugins": [
+		{
+			"Name": "HoudiniEngine",
+			"Enabled": true
+		}
 	]
 }
