@@ -13,7 +13,7 @@ enum EInvestigateState
 	Check            = 0 UMETA(DisplayName = "Check"),
 	Scattered_Search = 1 UMETA(DisplayName = "Scattered_Search"),
 	Thorough_Search  = 2 UMETA(DisplayName = "Thorough_Search"),
-	None             = 3 UMETA(DisplayName = "None")
+	No_Search             = 3 UMETA(DisplayName = "No Search")
 };
 
 /**
@@ -35,6 +35,9 @@ public:
 
 	// Reports the EQS Query Result
 	virtual void ReportEQSQueryResult(TSharedPtr<struct FEnvQueryResult> Result);
+
+	UFUNCTION(BlueprintCallable)
+	FVector UpdateNextPatrolPoint();
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE UDetectorComponent* GetDetectorComponent() { return DetectorComponent;}
@@ -64,6 +67,9 @@ private:
 
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "AI", meta = (AllowPrivateAccess = "true"))
 	class UDetectorComponent* DetectorComponent;
+
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "AI", meta = (AllowPrivateAccess = "true"))
+	class UPatrolTrackerComponent* PatrolTrackerComponent;
 
 	UPROPERTY()
 	class UBehaviorTree* BehaviorTree;

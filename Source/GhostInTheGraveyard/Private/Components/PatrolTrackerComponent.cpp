@@ -28,6 +28,8 @@ void UPatrolTrackerComponent::BeginPlay()
 			break;
 		}
 	}
+
+	FollowClosestPatrolPath(TrackedPatrolPathManager);
 }
 
 FVector UPatrolTrackerComponent::TraverseLoop(const FPatrolPointData& Data, bool bReverse /* = false*/)
@@ -81,34 +83,37 @@ FVector UPatrolTrackerComponent::FollowClosestPatrolPath(AAIPointContextManager*
 
 FVector UPatrolTrackerComponent::UpdateNextPatrolLocation()
 {
-	if (TrackedPatrolPathManager && TrackedPatrolSection)
+	if (TrackedPatrolPathManager)
 	{
 		//get the entry point
 		if (TargetPatrolPointIndex == -1)
 		{
 			FPatrolPointData Data;
-			TrackedPatrolPathManager->TryGetPatrolPointData(0, TrackedPatrolSection, Data);
-			TargetPatrolPointIndex = Data.Index;
-			return Data.Location;
+			if (TrackedPatrolPathManager->TryGetPatrolPointData(0, TrackedPatrolSection, Data))
+			{
+				TargetPatrolPointIndex = Data.Index;
+				return Data.Location;
+			}
 		}
 		else
 		{
 			FPatrolPointData Data;
-			TrackedPatrolPathManager->TryGetPatrolPointData(TargetPatrolPointIndex, TrackedPatrolSection, Data);
-
-			switch (TraversalMode)
+			if (TrackedPatrolPathManager->TryGetPatrolPointData(TargetPatrolPointIndex, TrackedPatrolSection, Data))
 			{
+				switch (TraversalMode)
+				{
 				case EPatrolTraversalMode::Loop:
 					return TraverseLoop(Data, false);
 				case EPatrolTraversalMode::Loop_Reversed:
 					return TraverseLoop(Data, true);
-				default :
+				default:
 					break;
+				}
 			}
 		}
 	}
 
-	return FVector::ZeroVector;
+	return FVector(FLT_MAX); //invalid vector
 }
 
 void UPatrolTrackerComponent::SetTraversalMode(EPatrolTraversalMode InMode)

@@ -12,11 +12,11 @@ struct FPatrolPointData;
 UENUM()
 enum EPatrolTraversalMode
 {
-	Loop           UMETA(DisplayName="Loop"),
+	Loop           UMETA(DisplayName = "Loop"),
 	Loop_Reversed  UMETA(DisplayName = "Reversed Loop"),
 	Ping_Pong	   UMETA(DisplayName = "Ping Pong"),
 	Random         UMETA(DisplayName = "Random"),
-	None           UMETA(DisplayName = "None (Off)")
+	Stop           UMETA(DisplayName = "Stop")
 };
 
 
@@ -75,7 +75,7 @@ private:
 
 	/* The current patrol path traversal mode. */
 	UPROPERTY(VisibleAnywhere)
-	TEnumAsByte<EPatrolTraversalMode> TraversalMode = EPatrolTraversalMode::None;
+	TEnumAsByte<EPatrolTraversalMode> TraversalMode = EPatrolTraversalMode::Stop;
 
 	/* The tracked patrol path manager. */
 	UPROPERTY(VisibleAnywhere)

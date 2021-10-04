@@ -10,6 +10,7 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "AI/AIStrings.h"
 #include "Components/DetectorComponent.h"
+#include "Components/PatrolTrackerComponent.h"
 #include "EnvironmentQuery/EnvQuery.h"
 
 ACreatureAIController::ACreatureAIController(const FObjectInitializer& ObjectInitializer)
@@ -57,8 +58,11 @@ ACreatureAIController::ACreatureAIController(const FObjectInitializer& ObjectIni
 	}
 
 	//Create the detector component
-	DetectorComponent = CreateDefaultSubobject<UDetectorComponent>(TEXT("DetectorComponent"));
+	DetectorComponent = CreateDefaultSubobject<UDetectorComponent>(TEXT("Detector Component"));
 	DetectorComponent->OnStageChanged.BindUFunction(this, "OnDetectedUpdate");
+
+	//Create patrol tracker component
+	PatrolTrackerComponent = CreateDefaultSubobject<UPatrolTrackerComponent>(TEXT("Patrol Tracker Component"));
 }
 
 void ACreatureAIController::Tick(float DeltaTime)
@@ -77,6 +81,8 @@ void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage
 			if (Stage == (uint32)EDetectionStage::Aware)
 			{
 				GetBlackboardComponent()->SetValueAsObject(FBBKeys::TargetActor, DetectedActor);
+				GetBlackboardComponent()->ClearValue(FBBKeys::TargetLocation);
+				GetBlackboardComponent()->ClearValue(FBBKeys::InvestigateState);
 			}
 		}
 		else
@@ -104,6 +110,15 @@ void ACreatureAIController::ReportEQSQueryResult(TSharedPtr<FEnvQueryResult> Res
 {
 	FOccluderVertexArray ResultLocations;
 	Result->GetAllAsLocations(ResultLocations);
+}
+
+FVector ACreatureAIController::UpdateNextPatrolPoint()
+{
+	if (PatrolTrackerComponent)
+	{
+		return PatrolTrackerComponent->UpdateNextPatrolLocation();
+	}
+	return FVector(FLT_MAX); // this is how UE4 AI perceives invalid location
 }
 
 void ACreatureAIController::BeginPlay()
