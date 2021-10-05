@@ -62,7 +62,7 @@ void FAIPointContextEdMode::Enter()
 	}
 
 	InitializeRenderData(Manager);
-	SelectPoint(nullptr, -1, EPointType::Patrol);
+	SelectPoint(Manager, -1, EPointType::Patrol);
 }
 
 void FAIPointContextEdMode::InitializeRenderData(AAIPointContextManager* Manager)
@@ -537,7 +537,7 @@ void FAIPointContextEdMode::AddPoint(EPointType PointType)
 
 bool FAIPointContextEdMode::CanAddPoint(EPointType PointType) const
 {
-	return HasValidSelection();
+	return Selection.Num() > 0 && HasValidSelection();
 }
 
 void FAIPointContextEdMode::RemovePoints()
@@ -595,7 +595,7 @@ bool FAIPointContextEdMode::HasValidSelection() const
 
 void FAIPointContextEdMode::SelectPoint(AAIPointContextManager* Actor, int32 Index, EPointType PointType, int32 Section /*=-1*/ )
 {
-	if (Actor == nullptr || Index == -1)
+	if (Actor == nullptr)
 	{
 		ClearSelection();
 		return;
@@ -623,7 +623,10 @@ void FAIPointContextEdMode::SelectPoint(AAIPointContextManager* Actor, int32 Ind
 	if (!bIsMultiSelecting)
 	{
 		ClearSelection();
-		SectionRenderData[SelectData.Section].PointRenderData[SelectData.CurrentSelectedIndex].bSelected = true;
+		if (Index != -1)
+		{
+			SectionRenderData[SelectData.Section].PointRenderData[SelectData.CurrentSelectedIndex].bSelected = true;
+		}
 		Selection.Push(MoveTemp(SelectData));
 		bHasSelectionLoop = false;
 	}
@@ -656,7 +659,13 @@ void FAIPointContextEdMode::ClearSelection()
 	{
 		for (const SelectionData& SelectData : Selection)
 		{
-			SectionRenderData[SelectData.Section].PointRenderData[SelectData.CurrentSelectedIndex].bSelected = false;
+			if (SectionRenderData.IsValidIndex(SelectData.Section))
+			{
+				if (SectionRenderData[SelectData.Section].PointRenderData.IsValidIndex(SelectData.CurrentSelectedIndex))
+				{
+					SectionRenderData[SelectData.Section].PointRenderData[SelectData.CurrentSelectedIndex].bSelected = false;
+				}
+			}
 		}
 
 		Selection.Empty();

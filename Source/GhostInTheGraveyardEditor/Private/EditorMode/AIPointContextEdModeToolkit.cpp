@@ -84,7 +84,7 @@ bool FAIPointContextEdModeToolkit::CanAddPoint() const
 	FAIPointContextEdMode* EdMode = GetEditorMode();
 	if (EdMode)
 	{
-		return EdMode->GetSelectedTargetPointActor() != nullptr;
+		return EdMode->CanAddPoint(EPointType::Patrol);
 	}
 
 	return false;
