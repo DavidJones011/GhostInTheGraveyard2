@@ -5,17 +5,17 @@
 
 namespace FAIPerceptionTags
 {
-	const static FName ProminentNoiseTag = TEXT("ProminentNoise");
+	const static FName DistinctNoiseTag = TEXT("Distinct_Noise");
 	const static FName NoiseTag = TEXT("Noise");
 }
 
 namespace FBBKeys
 {
-	const static FName SelfActor = TEXT("SelfActor");
-	const static FName TargetLocation = TEXT("TargetLocation");
-	const static FName TargetActor = TEXT("TargetActor");
-	const static FName InvestigateState = TEXT("InvestigateState");
-	const static FName IsSearching = TEXT("IsSearching");
+	const static FName SelfActor       = TEXT("SelfActor");
+	const static FName TargetLocation  = TEXT("TargetLocation");
+	const static FName TargetActor     = TEXT("TargetActor");
+	const static FName PlayerSeen      = TEXT("PlayerSeen");
+	const static FName ActiveState     = TEXT("ActiveState");
 }
 
 namespace FAIPaths

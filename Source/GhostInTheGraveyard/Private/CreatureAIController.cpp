@@ -80,18 +80,23 @@ void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage
 		{
 			if (Stage == (uint32)EDetectionStage::Aware)
 			{
+				GetBlackboardComponent()->SetValueAsBool(FBBKeys::PlayerSeen, true);
+				GetBlackboardComponent()->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::Pursue);
 				GetBlackboardComponent()->SetValueAsObject(FBBKeys::TargetActor, DetectedActor);
 				GetBlackboardComponent()->ClearValue(FBBKeys::TargetLocation);
-				GetBlackboardComponent()->ClearValue(FBBKeys::InvestigateState);
+				//GetBlackboardComponent()->ClearValue(FBBKeys::InvestigateState);
 			}
 		}
 		else
 		{
 			if (TargetActor == DetectedActor && Stage == (uint32)EDetectionStage::Curious)
 			{
+				GetBlackboardComponent()->SetValueAsBool(FBBKeys::PlayerSeen, false);
+				GetBlackboardComponent()->SetValueAsBool(FBBKeys::ActiveState, ECreatureState::Search);
+
 				GetBlackboardComponent()->ClearValue(FBBKeys::TargetActor);
 				GetBlackboardComponent()->SetValueAsVector(FBBKeys::TargetLocation, DetectedActor->GetActorLocation());
-				GetBlackboardComponent()->SetValueAsEnum(FBBKeys::InvestigateState, EInvestigateState::Thorough_Search);
+				//GetBlackboardComponent()->SetValueAsEnum(FBBKeys::InvestigateState, EInvestigateState::Thorough_Search);
 			}
 		}
 	}
@@ -143,6 +148,19 @@ void ACreatureAIController::OnTargetPerceptionUpdate(AActor* InActor, const FAIS
 	{
 		float Visibility = (Stimulus.WasSuccessfullySensed()) ? Stimulus.Strength : 0.0F;
 		DetectorComponent->SetDetectedActor(InActor, Visibility);
+	}
+
+	UBlackboardComponent* BlackboardComponent = GetBlackboardComponent();
+	if (BlackboardComponent && Stimulus.WasSuccessfullySensed())
+	{
+		if (BlackboardComponent->GetValueAsBool(FBBKeys::PlayerSeen) == false) // don't care if the player is seen
+		{
+			if (Stimulus.Tag == FAIPerceptionTags::DistinctNoiseTag)
+			{
+				BlackboardComponent->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::Investigate);
+				BlackboardComponent->SetValueAsVector(FBBKeys::TargetLocation, Stimulus.StimulusLocation);
+			}
+		}
 	}
 }
 

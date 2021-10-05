@@ -8,12 +8,13 @@
 #include "CreatureAIController.generated.h"
 
 UENUM(BlueprintType)
-enum EInvestigateState
+enum ECreatureState
 {
-	Check            = 0 UMETA(DisplayName = "Check"),
-	Scattered_Search = 1 UMETA(DisplayName = "Scattered_Search"),
-	Thorough_Search  = 2 UMETA(DisplayName = "Thorough_Search"),
-	No_Search             = 3 UMETA(DisplayName = "No Search")
+	Patrol            = 0 UMETA(DisplayName = "Patrol"),
+	Search            = 1 UMETA(DisplayName = "Search"),
+	Investigate       = 2 UMETA(DisplayName = "Investigate"),
+	Pursue            = 3 UMETA(DisplayName = "Pursue"),
+	InvalidState      = 4 UMETA(DisplayName = "Invalid_State")
 };
 
 /**
