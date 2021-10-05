@@ -9,6 +9,7 @@
 #include "PrimitiveSceneProxy.h"
 #include "EditorMode/AIPointContextEditorObject.h"
 #include "EditorMode/AIPointContextEditor.h"
+#include "CanvasItem.h"
 
 FAIPointContextEdMode::FAIPointContextEdMode()
 : FEdMode()
@@ -142,6 +143,8 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 	float DebugDrawDistSquared = DebugRenderDistance * DebugRenderDistance;
 
 	UWorld* World = GetWorld();
+	FCanvas* DebugCanvas = Viewport->GetDebugCanvas();
+
 	for (TActorIterator<AAIPointContextManager> It(World); It; ++It)
 	{
 		AAIPointContextManager* Actor = (*It);
@@ -191,42 +194,61 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 							FColor RenderColor = PointRenderData.bSelected ? FColor::White : Sect.SectionColor;
 							const FVector& Point = PointData.Location;
 
-							// check prior neighbor
-							if (Actor->IsValid(Section, PointData.PriorLinkIndex))
-							{
-								const PatrolPointRenderData& PriorPointRenderData = Sect.PointRenderData[PointData.PriorLinkIndex];
-								if (!PriorPointRenderData.bPendingRemoval)
-								{
-									FPatrolPointData PriorData;
-									if (!Visited[PointData.PriorLinkIndex] && Actor->TryGetPatrolPointData(PointData.PriorLinkIndex, PointData.SectionId, PriorData))
-									{
-										TraversalStack.Push(PointData.PriorLinkIndex);
-										PDI->DrawLine(PointData.Location, PriorData.Location, Sect.SectionColor, SDPG_Foreground);
-									}
-								}
-							}
-
-							// check next neighbor
-							if (Actor->IsValid(Section, PointData.NextLinkIndex))
-							{
-								const PatrolPointRenderData& NextPointRenderData = Sect.PointRenderData[PointData.NextLinkIndex];
-								if (!NextPointRenderData.bPendingRemoval)
-								{
-									FPatrolPointData NextData;
-									if (!Visited[PointData.NextLinkIndex] && Actor->TryGetPatrolPointData(PointData.NextLinkIndex, PointData.SectionId, NextData))
-									{
-										TraversalStack.Push(PointData.NextLinkIndex);
-										PDI->DrawLine(PointData.Location, NextData.Location, Sect.SectionColor, SDPG_Foreground);
-									}
-								}
-							}
-
-							FPlane ViewPlane = View->Project(Point);
+							// Only render patrol routes in view and within a certain distance.
+							FVector ViewPlane = View->Project(Point);
 							if (ViewPlane.X >= -1 && ViewPlane.X <= 1 && ViewPlane.Y >= -1 && ViewPlane.Y <= 1 && FVector::DistSquared(Point, View->ViewLocation) <= DebugDrawDistSquared)
 							{
 								PDI->SetHitProxy(new HAIPointContextProxy(Actor, PointData.Index, EPointType::Patrol, PointData.SectionId));
 								DrawWireSphere(PDI, FTransform(Point), RenderColor, DebugSphereRadius, 10, SDPG_Foreground);
 								PDI->SetHitProxy(NULL);
+
+								// display information on selected point
+								if (PointRenderData.bSelected)
+								{						
+									//DrawDebugString(GEngine->GetWorldFromContextObject(Actor), Point, DisplayString, NULL, Sect.SectionColor, 0.1f, true, 50.0F);
+									if (DebugCanvas)
+									{
+										FText DisplayString = FText::FromString(FString::Printf(TEXT("Section: %i\nIndex: %i"), Section, PointRenderData.PointIndex));
+										FIntPoint ViewportSize = Viewport->GetSizeXY();
+										FVector Pos = (ViewPlane + FVector::OneVector) * 0.5F;
+										Pos.Y = 1.0F - Pos.Y;
+										Pos *= FVector(ViewportSize);
+
+										FCanvasTextItem PointInfo(FVector2D(Pos.X + 30, Pos.Y - 30), DisplayString, GEngine->GetSmallFont(), FLinearColor(Sect.SectionColor));
+										PointInfo.EnableShadow(FLinearColor::Black);
+										DebugCanvas->DrawItem(PointInfo);
+									}
+								}
+
+								// check prior neighbor
+								if (Actor->IsValid(Section, PointData.PriorLinkIndex))
+								{
+									const PatrolPointRenderData& PriorPointRenderData = Sect.PointRenderData[PointData.PriorLinkIndex];
+									if (!PriorPointRenderData.bPendingRemoval)
+									{
+										FPatrolPointData PriorData;
+										if (!Visited[PointData.PriorLinkIndex] && Actor->TryGetPatrolPointData(PointData.PriorLinkIndex, PointData.SectionId, PriorData))
+										{
+											TraversalStack.Push(PointData.PriorLinkIndex);
+											PDI->DrawLine(PointData.Location, PriorData.Location, Sect.SectionColor, SDPG_Foreground);
+										}
+									}
+								}
+
+								// check next neighbor
+								if (Actor->IsValid(Section, PointData.NextLinkIndex))
+								{
+									const PatrolPointRenderData& NextPointRenderData = Sect.PointRenderData[PointData.NextLinkIndex];
+									if (!NextPointRenderData.bPendingRemoval)
+									{
+										FPatrolPointData NextData;
+										if (!Visited[PointData.NextLinkIndex] && Actor->TryGetPatrolPointData(PointData.NextLinkIndex, PointData.SectionId, NextData))
+										{
+											TraversalStack.Push(PointData.NextLinkIndex);
+											PDI->DrawLine(PointData.Location, NextData.Location, Sect.SectionColor, SDPG_Foreground);
+										}
+									}
+								}
 							}
 						}
 					}
