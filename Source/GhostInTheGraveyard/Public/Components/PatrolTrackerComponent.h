@@ -39,6 +39,15 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	/*
+	* Sets the tracked patrol section. 
+	*/
+	UFUNCTION(BlueprintCallable)
+	void SetTrackedPatrolSection(int32 SectionID);
+
+	/**
+	 * Sets the patrol route based on the closest patrol point.
+	 */
 	UFUNCTION(BlueprintCallable)
 	FVector FollowClosestPatrolPath(AAIPointContextManager* Manager);
 

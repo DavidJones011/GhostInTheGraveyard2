@@ -64,6 +64,11 @@ void UPatrolTrackerComponent::TickComponent(float DeltaTime, ELevelTick TickType
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
+void UPatrolTrackerComponent::SetTrackedPatrolSection(int32 SectionID)
+{
+	TrackedPatrolSection = SectionID;
+}
+
 FVector UPatrolTrackerComponent::FollowClosestPatrolPath(AAIPointContextManager* Manager)
 {
 	if (Manager)
