@@ -132,6 +132,12 @@ public:
 	void ClearLinks();
 	bool CanClearLinks() const;
 
+	void AddSection();
+	bool CanAddSection() const;
+
+	void RemoveSection();
+	bool CanRemoveSection() const;
+
 	void SetDebugSphereRadius(float Radius);
 	void SetDebugDrawDistance(float Distance);
 	float GetDebugSphereRadius() const { return DebugSphereRadius; }

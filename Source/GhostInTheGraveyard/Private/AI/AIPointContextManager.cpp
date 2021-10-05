@@ -81,6 +81,29 @@ void AAIPointContextManager::RemovePatrolPointFromSection(int32 Index, int32 Sec
 	}
 }
 
+void AAIPointContextManager::RemovePatrolSection(int32 Section)
+{
+	PatrolSections.RemoveAt(Section);
+
+	// update the section ids
+	int32 PatrolSectNum = PatrolSections.Num();
+	for (int32 UpdateSection = 0; UpdateSection < PatrolSectNum; UpdateSection++)
+	{
+		FPatrolSection& PatrolSection = PatrolSections[UpdateSection];
+		if (PatrolSection.SectionID >= Section)
+		{
+			PatrolSection.SectionID--;
+		}
+
+		int32 PatrolPointNum = PatrolSection.PatrolPoints.Num();
+		for (int32 UpdateIndex = 0; UpdateIndex < PatrolPointNum; UpdateIndex++)
+		{
+			FPatrolPointData& Data = PatrolSection.PatrolPoints[UpdateIndex];
+			Data.SectionId = PatrolSection.SectionID;
+		}
+	}
+}
+
 void AAIPointContextManager::LinkPatrolPoints(int32 FromPointIndex, int32 ToPointIndex, int32 Section, bool bLinkBothWays /*= false*/)
 {
 	// check if the section and index are valid

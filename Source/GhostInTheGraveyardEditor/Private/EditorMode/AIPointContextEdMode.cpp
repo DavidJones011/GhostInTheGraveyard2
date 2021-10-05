@@ -62,7 +62,7 @@ void FAIPointContextEdMode::Enter()
 	}
 
 	InitializeRenderData(Manager);
-	SelectPoint(Manager, -1, EPointType::Patrol);
+	SelectPoint(nullptr, -1, EPointType::Patrol);
 }
 
 void FAIPointContextEdMode::InitializeRenderData(AAIPointContextManager* Manager)
@@ -205,7 +205,6 @@ void FAIPointContextEdMode::Render(const FSceneView* View, FViewport* Viewport, 
 								// display information on selected point
 								if (PointRenderData.bSelected)
 								{						
-									//DrawDebugString(GEngine->GetWorldFromContextObject(Actor), Point, DisplayString, NULL, Sect.SectionColor, 0.1f, true, 50.0F);
 									if (DebugCanvas)
 									{
 										FText DisplayString = FText::FromString(FString::Printf(TEXT("Section: %i\nIndex: %i"), Section, PointRenderData.PointIndex));
@@ -332,6 +331,10 @@ bool FAIPointContextEdMode::HandleClick(FEditorViewportClient* InViewportClient,
 			{
 				SelectPoint(Manager, Index, PointType, Proxy->PatrolSection);
 			}
+		}
+		else
+		{
+			SelectPoint(nullptr, -1, EPointType::Patrol);
 		}
 	}
 
@@ -518,23 +521,6 @@ void FAIPointContextEdMode::AddPoint(EPointType PointType)
 					SectionRenderData[SelectDataSection].PointRenderData.Add(NewData);
 					SelectPoint(Manager, Index, PointType, SelectDataSection);
 				}
-				else
-				{
-					// create new section and render object
-					int32 SectionIndex = Manager->CreatePatrolSection(NewPoint);
-
-					PatrolSectionRenderData NewSectionRender;
-					AssignSectionColor(NewSectionRender.SectionColor);
-					NewSectionRender.SectionID = SectionIndex;
-
-					PatrolPointRenderData NewData;
-					NewData.PointIndex = 0;
-					NewData.Section = SectionIndex;
-
-					NewSectionRender.PointRenderData.Add(NewData);
-					SectionRenderData.Add(NewSectionRender);
-					SelectPoint(Manager, 0, PointType, SectionIndex);
-				}
 				break;
 			case EPointType::Search:
 				Manager->SearchPoints.Add(NewPoint);
@@ -551,7 +537,7 @@ void FAIPointContextEdMode::AddPoint(EPointType PointType)
 
 bool FAIPointContextEdMode::CanAddPoint(EPointType PointType) const
 {
-	return (GetSelectedTargetPointActor() != nullptr);
+	return HasValidSelection();
 }
 
 void FAIPointContextEdMode::RemovePoints()
@@ -730,6 +716,73 @@ bool FAIPointContextEdMode::CanClearLinks() const
 		return false;
 
 	return true;
+}
+
+void FAIPointContextEdMode::AddSection()
+{
+	AAIPointContextManager* Manager = GetSelectedTargetPointActor();
+	if (Manager)
+	{
+		const FScopedTransaction Transaction(FText::FromString("Add Section"));
+
+		FEditorViewportClient* Client = (FEditorViewportClient*)GEditor->GetActiveViewport()->GetClient();
+		// cast a ray to place point on geometry
+		const FVector StartLocation = Client->GetViewLocation();
+		const FVector EndLocation = Client->GetViewRotation().Vector() * 2000.0F;
+		FHitResult HitResult;
+		FVector NewPoint;
+		const bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECollisionChannel::ECC_WorldStatic);
+		if (bHit)
+			NewPoint = HitResult.Location + (HitResult.Normal * DebugSphereRadius);
+		else
+			NewPoint = Client->GetViewLocation() + (Client->GetViewRotation().Vector() * DebugSphereRadius);
+
+		// create new section and render object
+		int32 SectionIndex = Manager->CreatePatrolSection(NewPoint);
+
+		PatrolSectionRenderData NewSectionRender;
+		AssignSectionColor(NewSectionRender.SectionColor);
+		NewSectionRender.SectionID = SectionIndex;
+
+		PatrolPointRenderData NewData;
+		NewData.PointIndex = 0;
+		NewData.Section = SectionIndex;
+
+		NewSectionRender.PointRenderData.Add(NewData);
+		SectionRenderData.Add(NewSectionRender);
+		SelectPoint(Manager, 0, EPointType::Patrol, SectionIndex);
+
+		Manager->Modify();
+	}
+}
+
+bool FAIPointContextEdMode::CanAddSection() const
+{
+	return GetSelectedTargetPointActor() != nullptr;
+}
+
+void FAIPointContextEdMode::RemoveSection()
+{
+	AAIPointContextManager* Manager = GetSelectedTargetPointActor();
+	if (Manager)
+	{
+		const FScopedTransaction Transaction(FText::FromString("Remove Section"));
+
+		int32 PendingRemovalNum = 0;
+		for (const SelectionData& SelectData : Selection)
+		{
+			SectionRenderData[SelectData.Section].bPendingRemoval = true;
+			PendingRemovalNum++;
+			Manager->RemovePatrolSection(SelectData.Section);
+		}
+		Manager->Modify();
+		Selection.Empty();
+	}
+}
+
+bool FAIPointContextEdMode::CanRemoveSection() const
+{
+	return Selection.Num() > 0 && HasValidSelection();
 }
 
 void FAIPointContextEdMode::SetDebugSphereRadius(float Radius)
