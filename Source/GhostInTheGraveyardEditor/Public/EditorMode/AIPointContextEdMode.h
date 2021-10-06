@@ -105,6 +105,8 @@ public:
 	/* Handles clicking on items in viewport */
 	virtual bool HandleClick(FEditorViewportClient* InViewportClient, HHitProxy* HitProxy, const FViewportClick& Click);
 
+	virtual void PostUndo() override;
+
 	/* Functions that handle the transform widget */
 	virtual bool InputDelta(FEditorViewportClient* InViewportClient,FViewport* InViewport,FVector& InDrag,FRotator& InRot,FVector& InScale) override;
 	virtual bool ShowModeWidgets() const override { return true; }

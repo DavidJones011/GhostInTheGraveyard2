@@ -361,6 +361,31 @@ bool FAIPointContextEdMode::HandleClick(FEditorViewportClient* InViewportClient,
 	return bHandled;
 }
 
+void FAIPointContextEdMode::PostUndo()
+{
+	AAIPointContextManager* Manager = GetSelectedTargetPointActor();
+	SectionRenderData.Empty();
+	Selection.Empty();
+
+	if (!Manager)
+	{
+		for (TActorIterator<AAIPointContextManager> It(GetWorld()); It; ++It)
+		{
+			AAIPointContextManager* Actor = (*It);
+			if (Actor)
+			{
+				Manager = Actor;
+				break;
+			}
+		}
+	}
+
+	if (Manager)
+	{
+		InitializeRenderData(Manager);
+	}
+}
+
 bool FAIPointContextEdMode::InputDelta(FEditorViewportClient* InViewportClient, FViewport* InViewport, FVector& InDrag, FRotator& InRot, FVector& InScale)
 {
 	if (InViewportClient->GetCurrentWidgetAxis() == EAxisList::None)
@@ -487,6 +512,7 @@ void FAIPointContextEdMode::AddPoint(EPointType PointType)
 	{
 		// this allows us to undo/redo
 		const FScopedTransaction Transaction(FText::FromString("Add Point"));
+		Manager->Modify();
 
 		FEditorViewportClient* Client = (FEditorViewportClient*)GEditor->GetActiveViewport()->GetClient();
 		// cast a ray to place point on geometry
@@ -530,8 +556,6 @@ void FAIPointContextEdMode::AddPoint(EPointType PointType)
 				// TO BE IMPLEMENTED
 				break;
 		}
-
-		Manager->Modify();
 	}
 }
 
@@ -546,6 +570,7 @@ void FAIPointContextEdMode::RemovePoints()
 	if (Manager)
 	{
 		const FScopedTransaction Transaction(FText::FromString("Remove Point"));
+		Manager->Modify();
 
 		int32 PendingRemovalNum = 0;
 		for (const SelectionData& SelectData : Selection)
@@ -557,7 +582,6 @@ void FAIPointContextEdMode::RemovePoints()
 			if(PendingRemovalNum == SectionRenderData[SelectData.Section].PointRenderData.Num())
 				SectionRenderData[SelectData.Section].bPendingRemoval = true;
 		}
-		Manager->Modify();
 		Selection.Empty();
 	}
 }
@@ -679,6 +703,8 @@ void FAIPointContextEdMode::CreateLink()
 	if (Manager && SelectionNum() > 1)
 	{
 		const FScopedTransaction Transaction(FText::FromString("Link Points"));
+		Manager->Modify();
+
 		SelectionData* PriorData = &Selection[0];
 		for (int32 Index = 1; Index < Selection.Num(); Index++)
 		{
@@ -692,8 +718,6 @@ void FAIPointContextEdMode::CreateLink()
 			SelectionData* FirstData = &Selection[0];
 			Manager->LinkPatrolPoints(PriorData->CurrentSelectedIndex, FirstData->CurrentSelectedIndex, FirstData->Section, true);
 		}
-
-		Manager->Modify();
 	}
 }
 
@@ -711,11 +735,12 @@ void FAIPointContextEdMode::ClearLinks()
 	if (Manager)
 	{
 		const FScopedTransaction Transaction(FText::FromString("Clear Links"));
+		Manager->Modify();
+
 		for (const SelectionData& SelectData : Selection)
 		{
 			Manager->RemoveLink(SelectData.CurrentSelectedIndex, SelectData.Section, Unlink_Both);
 		}
-		Manager->Modify();
 	}
 }
 
@@ -733,6 +758,7 @@ void FAIPointContextEdMode::AddSection()
 	if (Manager)
 	{
 		const FScopedTransaction Transaction(FText::FromString("Add Section"));
+		Manager->Modify();
 
 		FEditorViewportClient* Client = (FEditorViewportClient*)GEditor->GetActiveViewport()->GetClient();
 		// cast a ray to place point on geometry
@@ -760,8 +786,6 @@ void FAIPointContextEdMode::AddSection()
 		NewSectionRender.PointRenderData.Add(NewData);
 		SectionRenderData.Add(NewSectionRender);
 		SelectPoint(Manager, 0, EPointType::Patrol, SectionIndex);
-
-		Manager->Modify();
 	}
 }
 
@@ -776,6 +800,7 @@ void FAIPointContextEdMode::RemoveSection()
 	if (Manager)
 	{
 		const FScopedTransaction Transaction(FText::FromString("Remove Section"));
+		Manager->Modify();
 
 		int32 PendingRemovalNum = 0;
 		for (const SelectionData& SelectData : Selection)
@@ -784,7 +809,6 @@ void FAIPointContextEdMode::RemoveSection()
 			PendingRemovalNum++;
 			Manager->RemovePatrolSection(SelectData.Section);
 		}
-		Manager->Modify();
 		Selection.Empty();
 	}
 }
