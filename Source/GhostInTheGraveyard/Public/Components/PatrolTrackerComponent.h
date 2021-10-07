@@ -12,11 +12,11 @@ struct FPatrolPointData;
 UENUM()
 enum EPatrolTraversalMode
 {
-	Loop           UMETA(DisplayName="Loop"),
+	Loop           UMETA(DisplayName = "Loop"),
 	Loop_Reversed  UMETA(DisplayName = "Reversed Loop"),
 	Ping_Pong	   UMETA(DisplayName = "Ping Pong"),
 	Random         UMETA(DisplayName = "Random"),
-	None           UMETA(DisplayName = "None (Off)")
+	Stop           UMETA(DisplayName = "Stop")
 };
 
 
@@ -33,14 +33,33 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	FVector TraverseLoop(const FPatrolPointData& Data, bool bReverse = false);
+	void TraverseLoop(const FPatrolPointData& Data, bool bReverse = false);
 
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	/*
+	* Sets the tracked patrol section. 
+	* Returns if it was a valid section or not.
+	*/
 	UFUNCTION(BlueprintCallable)
-	FVector FollowClosestPatrolPath(AAIPointContextManager* Manager);
+	bool SetTrackedPatrolSection(AAIPointContextManager* Manager, int32 SectionID);
+
+	UFUNCTION(BlueprintCallable)
+	bool SetTrackedPatrolPoint(AAIPointContextManager* Manager, int32 SectionID, int32 Index);
+
+	/**
+	 * Sets the patrol route based on the closest patrol point.
+	 */
+// 	UFUNCTION(BlueprintCallable)
+// 	FVector FollowClosestPatrolPath(AAIPointContextManager* Manager);
+
+	/**
+	 * Follows the closest patrol point within a given section.
+	 */
+	UFUNCTION(BlueprintCallable)
+	FVector FollowClosestIndexInSection(AAIPointContextManager* Manager, int32 Section);
 
 	/*
 	* Update to the next patrol location based on the current traversal mode.
@@ -75,7 +94,7 @@ private:
 
 	/* The current patrol path traversal mode. */
 	UPROPERTY(VisibleAnywhere)
-	TEnumAsByte<EPatrolTraversalMode> TraversalMode = EPatrolTraversalMode::None;
+	TEnumAsByte<EPatrolTraversalMode> TraversalMode = EPatrolTraversalMode::Stop;
 
 	/* The tracked patrol path manager. */
 	UPROPERTY(VisibleAnywhere)

@@ -26,6 +26,12 @@ void FAIPointContextEdModeToolkit::MapCommands()
 
 	CommandList->MapAction(Commands.DeletePoints,
 		FUIAction(FExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::OnRemovePoints), FCanExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::CanRemovePoints)));
+
+	CommandList->MapAction(Commands.AddSection,
+		FUIAction(FExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::OnAddSection), FCanExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::CanAddSection)));
+
+	CommandList->MapAction(Commands.RemoveSection,
+		FUIAction(FExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::OnRemoveSection), FCanExecuteAction::CreateSP(this, &FAIPointContextEdModeToolkit::CanRemoveSection)));
 }
 
 FAIPointContextEdMode* FAIPointContextEdModeToolkit::GetEditorMode() const
@@ -54,6 +60,8 @@ void FAIPointContextEdModeToolkit::BuildToolPalette(FName PaletteName, class FTo
 	ToolbarBuilder.AddToolBarButton(Commands.ClearLinks);
 	ToolbarBuilder.AddToolBarButton(Commands.DeletePoints);
 	ToolbarBuilder.AddSeparator();
+	ToolbarBuilder.AddToolBarButton(Commands.AddSection);
+	ToolbarBuilder.AddToolBarButton(Commands.RemoveSection);
 	ToolbarBuilder.EndSection();
 }
 
@@ -76,7 +84,7 @@ bool FAIPointContextEdModeToolkit::CanAddPoint() const
 	FAIPointContextEdMode* EdMode = GetEditorMode();
 	if (EdMode)
 	{
-		return EdMode->GetSelectedTargetPointActor() != nullptr;
+		return EdMode->CanAddPoint(EPointType::Patrol);
 	}
 
 	return false;
@@ -139,5 +147,45 @@ bool FAIPointContextEdModeToolkit::CanRemovePoints() const
 	{
 		return EdMode->CanRemovePoints();
 	}
+	return false;
+}
+
+void FAIPointContextEdModeToolkit::OnAddSection()
+{
+	FAIPointContextEdMode* EdMode = GetEditorMode();
+	if (EdMode)
+	{
+		EdMode->AddSection();
+	}
+}
+
+bool FAIPointContextEdModeToolkit::CanAddSection() const
+{
+	FAIPointContextEdMode* EdMode = GetEditorMode();
+	if (EdMode)
+	{
+		return EdMode->CanAddSection();
+	}
+
+	return false;
+}
+
+void FAIPointContextEdModeToolkit::OnRemoveSection()
+{
+	FAIPointContextEdMode* EdMode = GetEditorMode();
+	if (EdMode)
+	{
+		EdMode->RemoveSection();
+	}
+}
+
+bool FAIPointContextEdModeToolkit::CanRemoveSection() const
+{
+	FAIPointContextEdMode* EdMode = GetEditorMode();
+	if (EdMode)
+	{
+		return EdMode->CanRemoveSection();
+	}
+
 	return false;
 }

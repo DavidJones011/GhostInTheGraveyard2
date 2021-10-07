@@ -97,6 +97,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void RemovePatrolPointFromSection(int32 Index, int32 Section);
 
+	/*
+	* Removes a patrol section.
+	*/
+	UFUNCTION(BlueprintCallable)
+	void RemovePatrolSection(int32 Section);
+
 	/**
 	 * Creates a link between two patrol points.
 	 */
@@ -121,6 +127,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool IsValid(int32 SectionID, int32 PointIndex) const;
 
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE bool IsValidSection(int32 Section) const {return PatrolSections.IsValidIndex(Section);}
+
 	/*
 	* Attempts to get a reference to the patrol point data at a given index and section.
 	*/
@@ -139,8 +148,17 @@ public:
 	UFUNCTION()
 	bool TryGetPatrolPointPriorData(int32 PointIndex, int32 SectionID, FPatrolPointData& Data) const;
 
+	/*
+	* Get closest patrol point data from point.
+	*/
 	UFUNCTION()
 	bool TryGetClosestPatrolPointData(const FVector& Point, FPatrolPointData& Data);
+
+	/*
+	* Get closest patrol point data from point within the given section.
+	*/
+	UFUNCTION()
+	bool TryGetClosestPatrolPointDataFromSection(int32 Section, const FVector& Point, FPatrolPointData& Data);
 
 	/**
 	 * Get the number of patrol points in a patrol section.
@@ -160,6 +178,4 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
-	
 };

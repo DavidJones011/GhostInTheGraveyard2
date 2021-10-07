@@ -35,15 +35,22 @@ public:
 
 		UI_COMMAND(DeletePoints, "Delete Point(s)", "Deletes selected points.",
 			EUserInterfaceActionType::Button, FInputChord(EKeys::Delete));
+
+		UI_COMMAND(AddSection, "Add Section", "Adds a new patrol section.",
+			EUserInterfaceActionType::Button, FInputChord());
+
+		UI_COMMAND(RemoveSection, "Remove Section", "Removes the patrol section.",
+			EUserInterfaceActionType::Button, FInputChord());
 	}
 
 #undef LOCTEXT_NAMESPACE
 
-	//TSharedPtr<FUICommandInfo> DeletePoint;
 	TSharedPtr<FUICommandInfo> AddPoint;
 	TSharedPtr<FUICommandInfo> LinkPoints;
 	TSharedPtr<FUICommandInfo> ClearLinks;
 	TSharedPtr<FUICommandInfo> DeletePoints;
+	TSharedPtr<FUICommandInfo> AddSection;
+	TSharedPtr<FUICommandInfo> RemoveSection;
 };
 
 class FAIPointContextEdModeToolkit : public FModeToolkit
@@ -76,6 +83,12 @@ public:
 
 	void OnRemovePoints();
 	bool CanRemovePoints() const;
+
+	void OnAddSection();
+	bool CanAddSection() const;
+
+	void OnRemoveSection();
+	bool CanRemoveSection() const;
 
 private:
 
