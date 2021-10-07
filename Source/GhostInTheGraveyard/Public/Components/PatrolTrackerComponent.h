@@ -33,7 +33,7 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	FVector TraverseLoop(const FPatrolPointData& Data, bool bReverse = false);
+	void TraverseLoop(const FPatrolPointData& Data, bool bReverse = false);
 
 public:	
 	// Called every frame
@@ -41,15 +41,25 @@ public:
 
 	/*
 	* Sets the tracked patrol section. 
+	* Returns if it was a valid section or not.
 	*/
 	UFUNCTION(BlueprintCallable)
-	void SetTrackedPatrolSection(int32 SectionID);
+	bool SetTrackedPatrolSection(AAIPointContextManager* Manager, int32 SectionID);
+
+	UFUNCTION(BlueprintCallable)
+	bool SetTrackedPatrolPoint(AAIPointContextManager* Manager, int32 SectionID, int32 Index);
 
 	/**
 	 * Sets the patrol route based on the closest patrol point.
 	 */
+// 	UFUNCTION(BlueprintCallable)
+// 	FVector FollowClosestPatrolPath(AAIPointContextManager* Manager);
+
+	/**
+	 * Follows the closest patrol point within a given section.
+	 */
 	UFUNCTION(BlueprintCallable)
-	FVector FollowClosestPatrolPath(AAIPointContextManager* Manager);
+	FVector FollowClosestIndexInSection(AAIPointContextManager* Manager, int32 Section);
 
 	/*
 	* Update to the next patrol location based on the current traversal mode.

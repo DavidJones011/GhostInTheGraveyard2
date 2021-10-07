@@ -16,23 +16,10 @@ UPatrolTrackerComponent::UPatrolTrackerComponent()
 void UPatrolTrackerComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
 	SetTraversalMode(DefaultMode);
-
-	for (TActorIterator<AAIPointContextManager> It(GetWorld()); It; ++It)
-	{
-		AAIPointContextManager* Manager = (*It);
-		if (Manager)
-		{
-			TrackedPatrolPathManager = Manager;
-			break;
-		}
-	}
-
-	FollowClosestPatrolPath(TrackedPatrolPathManager);
 }
 
-FVector UPatrolTrackerComponent::TraverseLoop(const FPatrolPointData& Data, bool bReverse /* = false*/)
+void UPatrolTrackerComponent::TraverseLoop(const FPatrolPointData& Data, bool bReverse /* = false*/)
 {
 	if (TrackedPatrolPathManager)
 	{
@@ -42,7 +29,6 @@ FVector UPatrolTrackerComponent::TraverseLoop(const FPatrolPointData& Data, bool
 			if (TrackedPatrolPathManager->TryGetPatrolPointNextData(Data.Index, Data.SectionId, ChosenData))
 			{
 				TargetPatrolPointIndex = ChosenData.Index;
-				return ChosenData.Location;
 			}
 		}
 		else
@@ -50,12 +36,9 @@ FVector UPatrolTrackerComponent::TraverseLoop(const FPatrolPointData& Data, bool
 			if (TrackedPatrolPathManager->TryGetPatrolPointPriorData(Data.Index, Data.SectionId, ChosenData))
 			{
 				TargetPatrolPointIndex = ChosenData.Index;
-				return ChosenData.Location;
 			}
 		}
 	}
-
-	return FVector::ZeroVector;
 }
 
 // Called every frame
@@ -64,17 +47,66 @@ void UPatrolTrackerComponent::TickComponent(float DeltaTime, ELevelTick TickType
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-void UPatrolTrackerComponent::SetTrackedPatrolSection(int32 SectionID)
-{
-	TrackedPatrolSection = SectionID;
-}
-
-FVector UPatrolTrackerComponent::FollowClosestPatrolPath(AAIPointContextManager* Manager)
+bool UPatrolTrackerComponent::SetTrackedPatrolSection(AAIPointContextManager* Manager, int32 SectionID)
 {
 	if (Manager)
 	{
 		FPatrolPointData ClosestData;
-		if (Manager->TryGetClosestPatrolPointData(GetOwner()->GetActorLocation(), ClosestData))
+		if (Manager->TryGetClosestPatrolPointDataFromSection(SectionID, GetOwner()->GetActorLocation(), ClosestData))
+		{
+			TrackedPatrolPathManager = Manager;
+			TargetPatrolPointIndex = ClosestData.Index;
+			TrackedPatrolSection = ClosestData.SectionId;
+			EntryPointIndex = TargetPatrolPointIndex;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool UPatrolTrackerComponent::SetTrackedPatrolPoint(AAIPointContextManager* Manager, int32 SectionID, int32 Index)
+{
+	if (Manager)
+	{
+		FPatrolPointData Data;
+		if (Manager->TryGetPatrolPointData(SectionID, Index, Data))
+		{
+			TrackedPatrolPathManager = Manager;
+			TargetPatrolPointIndex = Data.Index;
+			TrackedPatrolSection = Data.SectionId;
+			EntryPointIndex = TargetPatrolPointIndex;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+// FVector UPatrolTrackerComponent::FollowClosestPatrolPath(AAIPointContextManager* Manager)
+// {
+// 	if (Manager)
+// 	{
+// 		FPatrolPointData ClosestData;
+// 		if (Manager->TryGetClosestPatrolPointData(GetOwner()->GetActorLocation(), ClosestData))
+// 		{
+// 			TrackedPatrolPathManager = Manager;
+// 			TargetPatrolPointIndex = ClosestData.Index;
+// 			TrackedPatrolSection = ClosestData.SectionId;
+// 			EntryPointIndex = TargetPatrolPointIndex;
+// 			return ClosestData.Location;
+// 		}
+// 	}
+// 
+// 	return FVector(FLT_MAX);
+// }
+
+FVector UPatrolTrackerComponent::FollowClosestIndexInSection(AAIPointContextManager* Manager, int32 Section)
+{
+	if (Manager)
+	{
+		FPatrolPointData ClosestData;
+		if (Manager->TryGetClosestPatrolPointDataFromSection(Section, GetOwner()->GetActorLocation(), ClosestData))
 		{
 			TargetPatrolPointIndex = ClosestData.Index;
 			TrackedPatrolSection = ClosestData.SectionId;
@@ -83,38 +115,27 @@ FVector UPatrolTrackerComponent::FollowClosestPatrolPath(AAIPointContextManager*
 		}
 	}
 
-	return FVector::ZeroVector;
+	return FVector(FLT_MAX);
 }
 
 FVector UPatrolTrackerComponent::UpdateNextPatrolLocation()
 {
-	if (TrackedPatrolPathManager)
+	if (TrackedPatrolPathManager && TargetPatrolPointIndex > -1)
 	{
-		//get the entry point
-		if (TargetPatrolPointIndex == -1)
+		FPatrolPointData Data;
+		if (TrackedPatrolPathManager->TryGetPatrolPointData(TargetPatrolPointIndex, TrackedPatrolSection, Data))
 		{
-			FPatrolPointData Data;
-			if (TrackedPatrolPathManager->TryGetPatrolPointData(0, TrackedPatrolSection, Data))
+			switch (TraversalMode)
 			{
-				TargetPatrolPointIndex = Data.Index;
-				return Data.Location;
+			case EPatrolTraversalMode::Loop:
+				TraverseLoop(Data, false);
+			case EPatrolTraversalMode::Loop_Reversed:
+				TraverseLoop(Data, true);
+			default:
+				break;
 			}
-		}
-		else
-		{
-			FPatrolPointData Data;
-			if (TrackedPatrolPathManager->TryGetPatrolPointData(TargetPatrolPointIndex, TrackedPatrolSection, Data))
-			{
-				switch (TraversalMode)
-				{
-				case EPatrolTraversalMode::Loop:
-					return TraverseLoop(Data, false);
-				case EPatrolTraversalMode::Loop_Reversed:
-					return TraverseLoop(Data, true);
-				default:
-					break;
-				}
-			}
+
+			return Data.Location;
 		}
 	}
 

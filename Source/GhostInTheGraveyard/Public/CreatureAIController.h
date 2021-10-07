@@ -10,11 +10,11 @@
 UENUM(BlueprintType)
 enum ECreatureState
 {
-	Patrol            = 0 UMETA(DisplayName = "Patrol"),
-	Search            = 1 UMETA(DisplayName = "Search"),
-	Investigate       = 2 UMETA(DisplayName = "Investigate"),
-	Pursue            = 3 UMETA(DisplayName = "Pursue"),
-	InvalidState      = 4 UMETA(DisplayName = "Invalid_State")
+	ST_Patrol            = 0 UMETA(DisplayName = "Patrol"),
+	ST_Search            = 1 UMETA(DisplayName = "Search"),
+	ST_Investigate       = 2 UMETA(DisplayName = "Investigate"),
+	ST_Pursue            = 3 UMETA(DisplayName = "Pursue"),
+	ST_InvalidState      = 4 UMETA(DisplayName = "Invalid_State")
 };
 
 /**
@@ -36,6 +36,18 @@ public:
 
 	// Reports the EQS Query Result
 	virtual void ReportEQSQueryResult(TSharedPtr<struct FEnvQueryResult> Result);
+
+	/**
+	 * Send the tracked AI controller to go to the given patrol point.
+	 */
+	UFUNCTION(BlueprintCallable)
+	bool SendAIToPatrolPoint(AAIPointContextManager* Manager, int32 Section, int32 Index, bool bTeleport = false);
+
+	/**
+	 * Send the tracked AI controller to go to the given patrol section.
+	 */
+	UFUNCTION(BlueprintCallable)
+	bool SendAIToPatrolSection(AAIPointContextManager* Manager, int32 Section, bool bTeleport = false);
 
 	UFUNCTION(BlueprintCallable)
 	FVector UpdateNextPatrolPoint();
