@@ -109,11 +109,14 @@ void UDetectorComponent::SetDetectedActor(class AActor* DetectedActor, float Vis
 	Visibility = FMath::Clamp<float>(Visibility, 0.0F, 1.0F);
 
 	// Check if the detected actor exists
-	FDetectionData* Data = DetectionMap.Find(DetectedActor);
-	if (Data != NULL)
-	{		
-		Data->Visibility = Visibility;
-		return;
+	if (DetectionMap.Num() > 0)
+	{
+		FDetectionData* Data = DetectionMap.Find(DetectedActor);
+		if (Data != NULL)
+		{
+			Data->Visibility = Visibility;
+			return;
+		}
 	}
 
 	// Add it to the map

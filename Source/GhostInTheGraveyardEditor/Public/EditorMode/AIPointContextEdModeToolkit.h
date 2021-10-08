@@ -24,18 +24,33 @@ public:
 
 	virtual void RegisterCommands() override
 	{
-		UI_COMMAND(AddPoint, "Add Point", "Add a point.",
+		UI_COMMAND(AddPoint, "Add Point", "Adds a point.",
 			EUserInterfaceActionType::Button, FInputChord());
 
-		UI_COMMAND(ChangeType, "Change Type", "Changes the point type.",
+		UI_COMMAND(LinkPoints, "Link Points", "Links points in selected order.", 
+			EUserInterfaceActionType::Button, FInputChord(EKeys::L));
+
+		UI_COMMAND(ClearLinks, "Clear Link(s)", "Clears the links of selected points.",
+			EUserInterfaceActionType::Button, FInputChord(EKeys::U));
+
+		UI_COMMAND(DeletePoints, "Delete Point(s)", "Deletes selected points.",
+			EUserInterfaceActionType::Button, FInputChord(EKeys::Delete));
+
+		UI_COMMAND(AddSection, "Add Section", "Adds a new patrol section.",
+			EUserInterfaceActionType::Button, FInputChord());
+
+		UI_COMMAND(RemoveSection, "Remove Section", "Removes the patrol section.",
 			EUserInterfaceActionType::Button, FInputChord());
 	}
 
 #undef LOCTEXT_NAMESPACE
 
-	//TSharedPtr<FUICommandInfo> DeletePoint;
 	TSharedPtr<FUICommandInfo> AddPoint;
-	TSharedPtr<FUICommandInfo> ChangeType;
+	TSharedPtr<FUICommandInfo> LinkPoints;
+	TSharedPtr<FUICommandInfo> ClearLinks;
+	TSharedPtr<FUICommandInfo> DeletePoints;
+	TSharedPtr<FUICommandInfo> AddSection;
+	TSharedPtr<FUICommandInfo> RemoveSection;
 };
 
 class FAIPointContextEdModeToolkit : public FModeToolkit
@@ -44,6 +59,8 @@ class FAIPointContextEdModeToolkit : public FModeToolkit
 public:
 	/** Initializes the geometry mode toolkit */
 	virtual void Init(const TSharedPtr< class IToolkitHost >& InitToolkitHost) override;
+
+	void MapCommands();
 
 	virtual FName GetToolkitFName() const override { return FName("AIPointContextEdMode"); }
 	virtual FText GetBaseToolkitName() const override { return NSLOCTEXT("BuilderModeToolkit", "DisplayName", "Builder"); }
@@ -57,6 +74,21 @@ public:
 
 	void OnAddPoint();
 	bool CanAddPoint() const;
+
+	void OnLinkPoints();
+	bool CanLinkPoints() const;
+
+	void OnClearLinks();
+	bool CanClearLinks() const;
+
+	void OnRemovePoints();
+	bool CanRemovePoints() const;
+
+	void OnAddSection();
+	bool CanAddSection() const;
+
+	void OnRemoveSection();
+	bool CanRemoveSection() const;
 
 private:
 

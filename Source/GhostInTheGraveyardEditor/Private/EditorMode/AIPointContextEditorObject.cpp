@@ -84,4 +84,14 @@ void UAIPointContextEditorObject::PostEditChangeProperty(FPropertyChangedEvent& 
 			ParentMode->SetDebugDrawDistance(DebugDrawDistance);
 	}
 }
+
+void UAIPointContextEditorObject::Init()
+{
+	if(!ParentMode)
+		return;
+
+	ParentMode->SetDebugDrawDistance(DebugDrawDistance);
+	ParentMode->SetDebugSphereRadius(DebugSphereRadius);
+}
+
 #endif

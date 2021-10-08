@@ -42,7 +42,7 @@ void SAIPointContextEdModeWidget::Construct(const FArguments& InArgs, TSharedRef
 	FAIPointContextEdMode* EdMode = GetEdMode();
 	if (EdMode)
 	{
-		DetailsPanel->SetObject((UObject*)EdMode->UISettings);
+		DetailsPanel->SetObject((UObject*)EdMode->GetUISettings());
 	}
 
 	//AddOptions.Add(MakeShareable(new FString("Search Point")));
@@ -118,13 +118,13 @@ bool SAIPointContextEdModeWidget::CanAddPoint() const
 
 FReply SAIPointContextEdModeWidget::OnRemovePoint()
 {
-	GetEdMode()->RemovePoint();
+	GetEdMode()->RemovePoints();
 	return FReply::Handled();
 }
 
 bool SAIPointContextEdModeWidget::CanRemovePoint() const
 {
-	return GetEdMode()->CanRemovePoint();
+	return GetEdMode()->CanRemovePoints();
 }
 
 void SAIPointContextEdModeWidget::OnChangeDebugSphereRadius(float Value)

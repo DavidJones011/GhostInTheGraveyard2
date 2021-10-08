@@ -13,6 +13,14 @@ enum EPointType
 	Patrol = 2
 };
 
+UENUM()
+enum EUnlinkPoints
+{
+	Unlink_Next,
+	Unlink_Prior,
+	Unlink_Both
+};
+
 USTRUCT()
 struct GHOSTINTHEGRAVEYARD_API FPatrolPointData
 {
@@ -28,13 +36,13 @@ struct GHOSTINTHEGRAVEYARD_API FPatrolPointData
 	FVector Location;
 
 	UPROPERTY()
-	TArray<int32> LinkedPatrolIndex;
+	int32 PriorLinkIndex = -1;
 
 	UPROPERTY()
-	TArray<int32> LinkedPatrolSection;
+	int32 NextLinkIndex = -1;
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct GHOSTINTHEGRAVEYARD_API FPatrolSection
 {
 	GENERATED_BODY()
@@ -84,10 +92,28 @@ public:
 	int32 AddPatrolPointToSection(FVector Point, int32 SectionID);
 
 	/**
+	 * Removes a patrol point
+	 */
+	UFUNCTION(BlueprintCallable)
+	void RemovePatrolPointFromSection(int32 Index, int32 Section);
+
+	/*
+	* Removes a patrol section.
+	*/
+	UFUNCTION(BlueprintCallable)
+	void RemovePatrolSection(int32 Section);
+
+	/**
 	 * Creates a link between two patrol points.
 	 */
 	UFUNCTION(BlueprintCallable)
-	void LinkPatrolPoints(int32 FromPointIndex, int32 FromPointSection, int32 ToPointIndex, int32 ToPointSection, bool bLinkBothWays = false);
+	void LinkPatrolPoints(int32 FromPointIndex, int32 ToPointIndex, int32 Section, bool bLinkBothWays = false);
+
+	/**
+	* Removes the link between two patrol points
+	*/
+	UFUNCTION(BlueprintCallable)
+	void RemoveLink(int32 PointIndex, int32 Section, EUnlinkPoints UnlinkType);
 
 	/*
 	* Get the number of patrol sections;
@@ -101,11 +127,38 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool IsValid(int32 SectionID, int32 PointIndex) const;
 
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE bool IsValidSection(int32 Section) const {return PatrolSections.IsValidIndex(Section);}
+
 	/*
-	* Attempts to a reference to the patrol point data at a given index and section.
+	* Attempts to get a reference to the patrol point data at a given index and section.
 	*/
 	UFUNCTION()
 	bool TryGetPatrolPointData(int32 PointIndex, int32 SectionID, FPatrolPointData& Data) const;
+
+	/*
+	* Attempts to get a reference to the next patrol point data of a given index and section.
+	*/
+	UFUNCTION()
+	bool TryGetPatrolPointNextData(int32 PointIndex, int32 SectionID, FPatrolPointData& Data) const;
+
+	/*
+	* Attempts to get a reference to the next patrol point data of a given index and section.
+	*/
+	UFUNCTION()
+	bool TryGetPatrolPointPriorData(int32 PointIndex, int32 SectionID, FPatrolPointData& Data) const;
+
+	/*
+	* Get closest patrol point data from point.
+	*/
+	UFUNCTION()
+	bool TryGetClosestPatrolPointData(const FVector& Point, FPatrolPointData& Data);
+
+	/*
+	* Get closest patrol point data from point within the given section.
+	*/
+	UFUNCTION()
+	bool TryGetClosestPatrolPointDataFromSection(int32 Section, const FVector& Point, FPatrolPointData& Data);
 
 	/**
 	 * Get the number of patrol points in a patrol section.
@@ -125,6 +178,4 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
-	
 };

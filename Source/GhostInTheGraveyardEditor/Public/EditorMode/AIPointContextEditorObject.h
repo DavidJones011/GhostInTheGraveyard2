@@ -59,4 +59,6 @@ public:
 	{
 		ParentMode = Parent;
 	}
+
+	void Init();
 };
