@@ -1,7 +1,7 @@
 
 #include "AI/AIPointContextManager.h"
 #include "Containers/Array.h"
-#include "AI/AIWorldContextSubsystem.h"
+#include "AI/AIDirectorSubsystem.h"
 
 AAIPointContextManager::AAIPointContextManager()
 {
@@ -25,6 +25,8 @@ int32 AAIPointContextManager::CreatePatrolSection(FVector FirstPoint)
 	PatrolSection.PatrolPoints.Add(PatrolPointData);
 	PatrolSections.Add(PatrolSection);
 
+	UpdateSectionAverageLocation(NewID);
+
 	return NewID;
 }
 
@@ -41,6 +43,8 @@ int32 AAIPointContextManager::AddPatrolPointToSection(FVector Point, int32 Secti
 	PatrolPointData.Index = NewIndex;
 	PatrolPointData.Location = Point;
 	PatrolData.Add(PatrolPointData);
+
+	UpdateSectionAverageLocation(SectionID);
 
 	return NewIndex;
 }
@@ -80,6 +84,8 @@ void AAIPointContextManager::RemovePatrolPointFromSection(int32 Index, int32 Sec
 			Data.NextLinkIndex = (Data.NextLinkIndex == Data.Index) ? -1 : Data.NextLinkIndex;
 		}
 	}
+
+	UpdateSectionAverageLocation(Section);
 }
 
 void AAIPointContextManager::RemovePatrolSection(int32 Section)
@@ -299,7 +305,21 @@ void AAIPointContextManager::BeginPlay()
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		UAIWorldContextSubsystem* ContextSubsystem = GetWorld()->GetSubsystem<UAIWorldContextSubsystem>();
-		ContextSubsystem->RegisterAIContextManager(this);
+		UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+		Director->RegisterAIContextManager(this);
 	}
+}
+
+void AAIPointContextManager::UpdateSectionAverageLocation(int32 Section)
+{
+	if (!PatrolSections.IsValidIndex(Section))
+		return;
+
+	FPatrolSection& PatrolSection = PatrolSections[Section];
+	FVector Sum = FVector::ZeroVector;
+	for (const FPatrolPointData& PointData : PatrolSection.PatrolPoints)
+	{
+		Sum += PointData.Location;
+	}
+	Sum = Sum / PatrolSection.PatrolPoints.Num();
 }

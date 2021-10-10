@@ -56,6 +56,9 @@ public:
 	FORCEINLINE UDetectorComponent* GetDetectorComponent() { return DetectorComponent;}
 
 	UFUNCTION(BlueprintCallable)
+	FORCEINLINE UPatrolTrackerComponent* GetPatrolTrackerComponent() { return PatrolTrackerComponent; }
+
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE	UBehaviorTreeComponent* GetBehaviorTreeComponent() { return BehaviorTreeComponent; }
 
 protected:

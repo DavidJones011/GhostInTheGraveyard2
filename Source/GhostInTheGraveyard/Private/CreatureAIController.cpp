@@ -12,7 +12,7 @@
 #include "Components/DetectorComponent.h"
 #include "Components/PatrolTrackerComponent.h"
 #include "EnvironmentQuery/EnvQuery.h"
-#include "AI/AIWorldContextSubsystem.h"
+#include "AI/AIDirectorSubsystem.h"
 
 ACreatureAIController::ACreatureAIController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -93,7 +93,8 @@ void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage
 			if (TargetActor == DetectedActor && Stage == (uint32)EDetectionStage::Curious)
 			{
 				GetBlackboardComponent()->SetValueAsBool(FBBKeys::PlayerSeen, false);
-				GetBlackboardComponent()->SetValueAsBool(FBBKeys::ActiveState, ECreatureState::ST_Search);
+				//GetBlackboardComponent()->SetValueAsBool(FBBKeys::ActiveState, ECreatureState::ST_Search);
+				GetBlackboardComponent()->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Patrol);
 
 				GetBlackboardComponent()->ClearValue(FBBKeys::TargetActor);
 				GetBlackboardComponent()->SetValueAsVector(FBBKeys::TargetLocation, DetectedActor->GetActorLocation());
@@ -175,8 +176,8 @@ void ACreatureAIController::BeginPlay()
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		UAIWorldContextSubsystem* ContextSubsystem = GetWorld()->GetSubsystem<UAIWorldContextSubsystem>();
-		ContextSubsystem->RegisterAIController(this);
+		UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+		Director->RegisterAIController(this);
 	}
 }
 
