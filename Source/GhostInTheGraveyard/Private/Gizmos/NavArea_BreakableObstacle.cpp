@@ -8,4 +8,3 @@ UNavArea_BreakableObstacle::UNavArea_BreakableObstacle(const FObjectInitializer&
 	DrawColor = FColor(255, 153, 51);
 	FixedAreaEnteringCost = 1000.0F;
 }
-

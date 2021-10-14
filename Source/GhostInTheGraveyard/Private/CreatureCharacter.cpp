@@ -3,6 +3,7 @@
 
 #include "CreatureCharacter.h"
 #include "CreatureAIController.h"
+#include "CollisionQueryParams.h"
 
 // Sets default values
 ACreatureCharacter::ACreatureCharacter(const FObjectInitializer& ObjectInitializer)
@@ -31,5 +32,15 @@ void ACreatureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+}
+
+bool ACreatureCharacter::CheckForActorInFront(float Distance, FHitResult& OutResult)
+{
+	const FVector TargetLocation = GetActorLocation() + GetActorForwardVector() * Distance;
+	const ECollisionChannel DefaultSightCollisionChannel = ECollisionChannel::ECC_WorldDynamic;
+	const bool bHit = GetWorld()->LineTraceSingleByChannel(OutResult, GetActorLocation(), TargetLocation
+		, DefaultSightCollisionChannel
+		, FCollisionQueryParams("", true, this));
+	return bHit;
 }
 

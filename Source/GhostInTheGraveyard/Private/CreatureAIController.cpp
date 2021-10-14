@@ -13,6 +13,7 @@
 #include "Components/PatrolTrackerComponent.h"
 #include "EnvironmentQuery/EnvQuery.h"
 #include "AI/AIDirectorSubsystem.h"
+#include "CreatureCharacter.h"
 #include "GameFramework/Character.h"
 
 ACreatureAIController::ACreatureAIController(const FObjectInitializer& ObjectInitializer)
@@ -69,6 +70,22 @@ ACreatureAIController::ACreatureAIController(const FObjectInitializer& ObjectIni
 
 void ACreatureAIController::Tick(float DeltaTime)
 {
+	UBlackboardComponent* BlackboardComponent = GetBlackboardComponent();
+	if (BlackboardComponent && BlackboardComponent->GetValueAsBool(FBBKeys::FoundBreakable) == NULL)
+	{
+		ACreatureCharacter* AICharacter = Cast<ACreatureCharacter>(GetCharacter());
+		if(AICharacter)
+		{
+			FHitResult Result;
+			if (AICharacter->CheckForActorInFront(150.0F, Result))
+			{
+				if (Result.GetActor()->ActorHasTag(FAITags::BreakableTag))
+				{
+					BlackboardComponent->SetValueAsObject(FBBKeys::FoundBreakable, Result.GetActor());
+				}
+			}
+		}
+	}
 }
 
 void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage)
