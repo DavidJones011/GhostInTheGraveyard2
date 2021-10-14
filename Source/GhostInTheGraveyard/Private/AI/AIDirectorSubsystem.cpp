@@ -55,24 +55,31 @@ void UAIDirectorSubsystem::UnregisterAIContextManager()
 	PatrolManager = nullptr;
 }
 
-void UAIDirectorSubsystem::SendAIToPatrolSection(int32 Section)
+void UAIDirectorSubsystem::SendAIToPatrolPoint_Impl(int32 Section, int32 Index, EPatrolTraversalMode TraverseMode, bool bTeleport)
 {
-	if(AIController == nullptr || PatrolManager == nullptr)
+	if (AIController == nullptr || PatrolManager == nullptr)
 		return;
 
-	UPatrolTrackerComponent* PatrolTrackerComp = AIController->GetPatrolTrackerComponent();
-	if (PatrolTrackerComp)
-	{
-		int32 CurrentSection = PatrolTrackerComp->GetTrackedPatrolSection();
-		if (CurrentSection != Section)
-		{
-			PatrolTrackerComp->SetTrackedPatrolSection(PatrolManager, Section);
-		}
-	}
+	if (Index < 0)
+		AIController->SendAIToPatrolSection(PatrolManager, Section, bTeleport);
+	else
+		AIController->SendAIToPatrolPoint(PatrolManager, Section, Index, bTeleport);
 }
 
-void UAIDirectorSubsystem::TeleportAIToPatrolPoint(int32 Section, int32 Index)
+void UAIDirectorSubsystem::SendAIToPatrolPoint(int32 Section, int32 Index, float Delay /*= 0.0F*/, EPatrolTraversalMode TraverseMode /*= EPatrolTraversalMode::Loop*/, bool bTeleport /*= false*/)
 {
-	
+	if (FMath::IsNearlyZero(Delay))
+	{
+		SendAIToPatrolPoint_Impl(Section, Index, TraverseMode, bTeleport);
+	}
+	else
+	{	
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			FTimerDelegate TimerDel = FTimerDelegate::CreateUObject(this, &UAIDirectorSubsystem::SendAIToPatrolPoint_Impl, Section, Index, TraverseMode, bTeleport);
+			World->GetTimerManager().SetTimer(TimerHandle, TimerDel, Delay, false);
+		}
+	}
 }
 

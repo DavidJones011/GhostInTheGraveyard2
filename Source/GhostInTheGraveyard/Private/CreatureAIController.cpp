@@ -13,6 +13,7 @@
 #include "Components/PatrolTrackerComponent.h"
 #include "EnvironmentQuery/EnvQuery.h"
 #include "AI/AIDirectorSubsystem.h"
+#include "GameFramework/Character.h"
 
 ACreatureAIController::ACreatureAIController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -123,16 +124,26 @@ bool ACreatureAIController::SendAIToPatrolPoint(AAIPointContextManager* Manager,
 {
 	if (PatrolTrackerComponent)
 	{
-		ACharacter* Chracter = GetCharacter();
-		bool bSuccess = PatrolTrackerComponent->SetTrackedPatrolPoint(Manager, Section, Index) && GetCharacter();
-		if (bSuccess)
+		ACharacter* AICharacter = GetCharacter();
+		bool bSuccess = (AICharacter != nullptr) && PatrolTrackerComponent->SetTrackedPatrolPoint(Manager, Section, Index);
+		
+		FVector Location = AICharacter->GetActorLocation();
+		if (bSuccess && bTeleport)
 		{
-			if (bTeleport)
-			{
-				GetCharacter()->SetActorLocation(UpdateNextPatrolPoint());
-			}
-			return true;
+			Location = UpdateNextPatrolPoint();
+			GetCharacter()->SetActorLocation(Location);
 		}
+
+		UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
+		if (BlackboardComp)
+		{
+			if (BlackboardComp->GetValueAsEnum(FBBKeys::ActiveState) == ECreatureState::ST_Patrol)
+			{
+				BlackboardComp->SetValueAsVector(FBBKeys::TargetLocation, Location);
+			}
+		}
+
+		return true;
 	}
 	return false;
 }
@@ -141,16 +152,31 @@ bool ACreatureAIController::SendAIToPatrolSection(AAIPointContextManager* Manage
 {
 	if (PatrolTrackerComponent)
 	{
-		ACharacter* Chracter = GetCharacter();
-		bool bSuccess = PatrolTrackerComponent->SetTrackedPatrolSection(Manager, Section) && GetCharacter();
-		if (bSuccess)
-		{			
-			if (bTeleport)
-			{
-				GetCharacter()->SetActorLocation(UpdateNextPatrolPoint());
-			}
-			return true;
+		if (Section == PatrolTrackerComponent->GetTrackedPatrolSection())
+		{
+			return false;
 		}
+
+		ACharacter* AICharacter = GetCharacter();
+		bool bSuccess = (AICharacter != nullptr) && PatrolTrackerComponent->SetTrackedPatrolSection(Manager, Section);
+		
+		FVector Location = AICharacter->GetActorLocation();
+		if (bSuccess && bTeleport)
+		{
+			Location = UpdateNextPatrolPoint();
+			GetCharacter()->SetActorLocation(Location);
+		}
+
+		UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
+		if (BlackboardComp)
+		{
+			if (BlackboardComp->GetValueAsEnum(FBBKeys::ActiveState) == ECreatureState::ST_Patrol)
+			{
+				BlackboardComp->SetValueAsVector(FBBKeys::TargetLocation, Location);
+			}
+		}
+
+		return true;
 	}
 	return false;
 }

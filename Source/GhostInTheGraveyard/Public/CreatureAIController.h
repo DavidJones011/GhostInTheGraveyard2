@@ -90,9 +90,9 @@ private:
 	UPROPERTY()
 	class UBehaviorTree* BehaviorTree;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "AI", meta = (AllowPrivateAccess = "true"))
 	class UAISenseConfig_Hearing* HearingConfig;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "AI", meta = (AllowPrivateAccess = "true"))
 	class UAISenseConfig_Sight* SightConfig;
 };

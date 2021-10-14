@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
+#include "Components/PatrolTrackerComponent.h"
 #include "AIDirectorSubsystem.generated.h"
 
 class ASurvivorCharacter;
@@ -52,6 +53,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void RegisterAIContextManager(AAIPointContextManager* Manager);
 
+	/*
+	* Unregister the current AI context manager.
+	*/
 	UFUNCTION(BlueprintCallable)
 	void UnregisterAIContextManager();
 
@@ -59,13 +63,20 @@ public:
 	* Updates the patrol section the tracked AI should be in.
 	*/
 	UFUNCTION(BlueprintCallable)
-	void SendAIToPatrolSection(int32 Section);
+	void SendAIToPatrolSection(int32 Section, float Delay = 0.0F, EPatrolTraversalMode TraverseMode = EPatrolTraversalMode::Loop, bool bTeleport = false) { SendAIToPatrolPoint(Section, -1, Delay, TraverseMode, bTeleport); }
 
 	/*
-	* Teleports the AI to a specific patrol point.
+	* Updates the patrol section the tracked AI should be in.
 	*/
 	UFUNCTION(BlueprintCallable)
-	void TeleportAIToPatrolPoint(int32 Section, int32 Index);
+	void SendAIToPatrolPoint(int32 Section, int32 Index, float Delay = 0.0F, EPatrolTraversalMode TraverseMode = EPatrolTraversalMode::Loop, bool bTeleport = false);
+
+protected:
+
+	UFUNCTION(BlueprintCallable)
+	void SendAIToPatrolPoint_Impl(int32 Section, int32 Index, EPatrolTraversalMode TraverseMode, bool bTeleport);
+
+	FTimerHandle TimerHandle;
 
 private:
 

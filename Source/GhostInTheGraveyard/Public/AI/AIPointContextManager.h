@@ -53,12 +53,6 @@ public:
 	int32 SectionID = -1;
 
 	UPROPERTY()
-	FVector SectionAvgLocation = FVector::ZeroVector;
-
-	//UPROPERTY()
-	//EPatrolTraversalMode SectionTraverseMode;
-
-	UPROPERTY()
 	TArray<FPatrolPointData> PatrolPoints;
 };
 
@@ -182,11 +176,7 @@ public:
 	 */
 	FVector* GetPatrolPointVectorPtr(int32 SectionID, int32 PointIndex);
 
-
-
 protected:
 
 	virtual void BeginPlay() override;
-
-	void UpdateSectionAverageLocation(int32 Section);
 };

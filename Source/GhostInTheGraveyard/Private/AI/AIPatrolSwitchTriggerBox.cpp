@@ -39,14 +39,14 @@ void AAIPatrolSwitchTriggerBox::Switch()
 		UAIDirectorSubsystem* Director = World->GetSubsystem<UAIDirectorSubsystem>();
 		if (Director && PatrolSection > -1)
 		{
-// 			if (PatrolPointIndex > -1)
-// 			{
-// 				Director->SendAIToPatrolPoint(PatrolSection, PatrolPointIndex, bTeleport);
-// 			}
-//		else
-//		{
-				Director->SendAIToPatrolSection(PatrolSection);
-//			}
+			if (PatrolPointIndex > -1)
+			{
+				Director->SendAIToPatrolPoint(PatrolSection, PatrolPointIndex, Delay, TraverseMode, bTeleport);
+			}
+			else
+			{
+				Director->SendAIToPatrolSection(PatrolSection, Delay, TraverseMode, bTeleport);
+			}
 		}
 		else
 		{

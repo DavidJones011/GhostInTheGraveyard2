@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/TriggerBox.h"
+#include "Components/PatrolTrackerComponent.h"
 #include "AIPatrolSwitchTriggerBox.generated.h"
 
 /**
@@ -29,6 +30,10 @@ protected:
 	UPROPERTY(EditAnywhere)
 	int32 PatrolPointIndex = -1;
 	
+	// The patrol traversal mode.
+	UPROPERTY(EditAnywhere)
+	TEnumAsByte<EPatrolTraversalMode> TraverseMode;
+
 	// Teleport the AI to the given section and point index index.
 	UPROPERTY(EditAnywhere)
 	bool bTeleport = false;
