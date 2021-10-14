@@ -6,6 +6,6 @@
 UNavArea_BreakableObstacle::UNavArea_BreakableObstacle(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	DrawColor = FColor(255, 153, 51);
-	FixedAreaEnteringCost = 2000.0F;
+	FixedAreaEnteringCost = 1000.0F;
 }
 
