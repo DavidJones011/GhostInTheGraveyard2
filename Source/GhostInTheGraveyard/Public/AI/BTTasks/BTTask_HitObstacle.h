@@ -9,9 +9,13 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(config = Game)
 class GHOSTINTHEGRAVEYARD_API UBTTask_HitObstacle : public UBTTask_BlackboardBase
 {
-	GENERATED_BODY()
-	
+	GENERATED_UCLASS_BODY()
+
+	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory);
+
+	UPROPERTY(EditAnywhere)
+	float Damage = 35.0F;
 };

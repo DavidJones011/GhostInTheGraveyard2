@@ -71,7 +71,7 @@ ACreatureAIController::ACreatureAIController(const FObjectInitializer& ObjectIni
 void ACreatureAIController::Tick(float DeltaTime)
 {
 	UBlackboardComponent* BlackboardComponent = GetBlackboardComponent();
-	if (BlackboardComponent && BlackboardComponent->GetValueAsBool(FBBKeys::FoundBreakable) == NULL)
+	if (BlackboardComponent && BlackboardComponent->GetValueAsObject(FBBKeys::FoundBreakable) == NULL)
 	{
 		ACreatureCharacter* AICharacter = Cast<ACreatureCharacter>(GetCharacter());
 		if(AICharacter)

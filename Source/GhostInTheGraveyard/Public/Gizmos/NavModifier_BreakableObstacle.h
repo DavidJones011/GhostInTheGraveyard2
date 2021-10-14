@@ -25,6 +25,9 @@ public:
 	FORCEINLINE float GetHealth() const { return Health; }
 
 	UFUNCTION(BlueprintCallable)
+	virtual bool IsBroken() const { return Health == 0; }
+
+	UFUNCTION(BlueprintCallable)
 	void SetHealth(float NewHealth) { Health = NewHealth; }
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
