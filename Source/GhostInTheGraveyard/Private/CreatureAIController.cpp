@@ -116,7 +116,7 @@ void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage
 
 				GetBlackboardComponent()->ClearValue(FBBKeys::TargetActor);
 				GetBlackboardComponent()->SetValueAsVector(FBBKeys::TargetLocation, DetectedActor->GetActorLocation());
-				//GetBlackboardComponent()->SetValueAsEnum(FBBKeys::InvestigateState, EInvestigateState::Thorough_Search);
+				BlackboardComponent->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Investigate);
 			}
 		}
 	}
