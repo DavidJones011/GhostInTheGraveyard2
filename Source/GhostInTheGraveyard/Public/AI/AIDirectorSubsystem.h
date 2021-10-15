@@ -66,10 +66,34 @@ public:
 	void SendAIToPatrolSection(int32 Section, float Delay = 0.0F, EPatrolTraversalMode TraverseMode = EPatrolTraversalMode::Loop, bool bTeleport = false) { SendAIToPatrolPoint(Section, -1, Delay, TraverseMode, bTeleport); }
 
 	/*
+	* Has the AI detect the given actor instantly.
+	*/
+	UFUNCTION(BlueprintCallable)
+	void SetAIAwareOfActor(AActor* DetectedActor);
+
+	UFUNCTION(BlueprintCallable)
+	void SetAIAwareOfPlayer();
+
+	/*
+	* Has the AI investigate the location right away.
+	*/
+	UFUNCTION(BlueprintCallable)
+	void SendAIToInvestigateLocation(FVector Location);
+
+	UFUNCTION(BlueprintCallable)
+	void SendAIToInvestigatePlayerLocation();
+
+	/*
 	* Updates the patrol section the tracked AI should be in.
 	*/
 	UFUNCTION(BlueprintCallable)
 	void SendAIToPatrolPoint(int32 Section, int32 Index, float Delay = 0.0F, EPatrolTraversalMode TraverseMode = EPatrolTraversalMode::Loop, bool bTeleport = false);
+
+	/*
+	* Teleports the AI to the specific patrol section and index.
+	*/
+	UFUNCTION(BlueprintCallable)
+	void PlaceAIAtPatrolPoint(int32 Section, int32 Index);
 
 protected:
 

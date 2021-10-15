@@ -53,6 +53,12 @@ public:
 	FVector UpdateNextPatrolPoint();
 
 	UFUNCTION(BlueprintCallable)
+	void InstantlyDetect(AActor* InActor);
+
+	UFUNCTION(BlueprintCallable)
+	void InvestigateLocation(FVector Location);
+
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE UDetectorComponent* GetDetectorComponent() { return DetectorComponent;}
 
 	UFUNCTION(BlueprintCallable)

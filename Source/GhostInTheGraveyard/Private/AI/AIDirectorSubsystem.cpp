@@ -55,6 +55,32 @@ void UAIDirectorSubsystem::UnregisterAIContextManager()
 	PatrolManager = nullptr;
 }
 
+void UAIDirectorSubsystem::SetAIAwareOfActor(AActor* DetectedActor)
+{
+	if (AIController == nullptr)
+		return;
+
+	AIController->InstantlyDetect(DetectedActor);
+}
+
+void UAIDirectorSubsystem::SetAIAwareOfPlayer()
+{
+	if (PlayerCharacter) { SetAIAwareOfActor(PlayerCharacter); }
+}
+
+void UAIDirectorSubsystem::SendAIToInvestigateLocation(FVector Location)
+{
+	if (AIController == nullptr && Location != FVector(FLT_MAX))
+		return;
+
+	AIController->InvestigateLocation(Location);
+}
+
+void UAIDirectorSubsystem::SendAIToInvestigatePlayerLocation()
+{
+	if (PlayerCharacter) { SendAIToInvestigateLocation(PlayerCharacter->GetActorLocation()); }
+}
+
 void UAIDirectorSubsystem::SendAIToPatrolPoint_Impl(int32 Section, int32 Index, EPatrolTraversalMode TraverseMode, bool bTeleport)
 {
 	if (AIController == nullptr || PatrolManager == nullptr)
@@ -80,6 +106,32 @@ void UAIDirectorSubsystem::SendAIToPatrolPoint(int32 Section, int32 Index, float
 			FTimerDelegate TimerDel = FTimerDelegate::CreateUObject(this, &UAIDirectorSubsystem::SendAIToPatrolPoint_Impl, Section, Index, TraverseMode, bTeleport);
 			World->GetTimerManager().SetTimer(TimerHandle, TimerDel, Delay, false);
 		}
+	}
+}
+
+void UAIDirectorSubsystem::PlaceAIAtPatrolPoint(int32 Section, int32 Index)
+{
+	if(!AIController)
+		return;
+
+	ACharacter* AICharacter = AIController->GetCharacter();
+
+	if(!AICharacter)
+		return;
+
+	if (PatrolManager)
+	{
+		FPatrolPointData Data;
+		if (Index > -1)
+		{
+			PatrolManager->TryGetPatrolPointData(Index, Section, Data);
+		}
+		else
+		{
+			PatrolManager->TryGetClosestPatrolPointDataFromSection(Section, AICharacter->GetActorLocation(), Data);
+		}
+
+		AICharacter->SetActorLocation(Data.Location);
 	}
 }
 

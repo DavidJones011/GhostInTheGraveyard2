@@ -4,6 +4,7 @@
 #include "AI/AIPatrolSwitchTriggerBox.h"
 #include "Components/ShapeComponent.h"
 #include "AI/AIDirectorSubsystem.h"
+#include "GameFramework/Character.h"
 
 AAIPatrolSwitchTriggerBox::AAIPatrolSwitchTriggerBox()
 : Super()
@@ -14,21 +15,40 @@ AAIPatrolSwitchTriggerBox::AAIPatrolSwitchTriggerBox()
 	{
 		Shape->SetGenerateOverlapEvents(true);
 		Shape->OnComponentBeginOverlap.AddDynamic(this, &AAIPatrolSwitchTriggerBox::BeginOverlap);
-		//Shape->OnComponentEndOverlap.AddDynamic(this, &AAIPatrolSwitchTriggerBox::EndOverlap);
+		Shape->OnComponentEndOverlap.AddDynamic(this, &AAIPatrolSwitchTriggerBox::EndOverlap);
 	}
 }
 
 void AAIPatrolSwitchTriggerBox::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if(bOnExit)
+		return;
+
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		Switch();
+		ACharacter* Character =  Cast<ACharacter>(OtherActor);
+		if (Character->IsPlayerControlled())
+		{
+			Switch();
+		}
 	}
 }
 
 void AAIPatrolSwitchTriggerBox::EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
+	if(!bOnExit)
+		return;
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		ACharacter* Character = Cast<ACharacter>(OtherActor);
+		if (Character->IsPlayerControlled())
+		{
+			Switch();
+		}
+	}
 }
 
 void AAIPatrolSwitchTriggerBox::Switch()
@@ -37,20 +57,49 @@ void AAIPatrolSwitchTriggerBox::Switch()
 	if (World)
 	{
 		UAIDirectorSubsystem* Director = World->GetSubsystem<UAIDirectorSubsystem>();
-		if (Director && PatrolSection > -1)
+		if (Director)
 		{
-			if (PatrolPointIndex > -1)
+			if (!bDoNotAssignPatrolRoute)
 			{
-				Director->SendAIToPatrolPoint(PatrolSection, PatrolPointIndex, Delay, TraverseMode, bTeleport);
+				if (PatrolPointIndex > -1)
+				{
+					Director->SendAIToPatrolPoint(PatrolSection, PatrolPointIndex, Delay, TraverseMode, bTeleport);
+				}
+				else
+				{
+					Director->SendAIToPatrolSection(PatrolSection, Delay, TraverseMode, bTeleport);
+				}
 			}
-			else
+
+			if (bTeleport)
 			{
-				Director->SendAIToPatrolSection(PatrolSection, Delay, TraverseMode, bTeleport);
+				if (bDoNotAssignPatrolRoute)
+				{
+					Director->PlaceAIAtPatrolPoint(PatrolSection, PatrolPointIndex);
+				}
+
+				switch (TeleportState)
+				{
+				case ETeleportState::TS_Investigate:
+					Director->SendAIToInvestigatePlayerLocation();
+					break;
+				case ETeleportState::TS_Pursue:
+					Director->SetAIAwareOfPlayer();
+					break;
+				default:
+					break;
+				}
 			}
 		}
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("The patrol section was NOT valid."));
 		}
+	}
+
+	if (bDisableAfterOnce)
+	{
+		UShapeComponent* Shape = GetCollisionComponent();
+		Shape->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 }

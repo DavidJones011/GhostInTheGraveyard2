@@ -207,6 +207,29 @@ FVector ACreatureAIController::UpdateNextPatrolPoint()
 	return FVector(FLT_MAX); // this is how UE4 AI perceives invalid location
 }
 
+void ACreatureAIController::InstantlyDetect(AActor* InActor)
+{
+	ACharacter* TargetCharacter = Cast<ACharacter>(InActor);
+	if (TargetCharacter && DetectorComponent)
+	{
+		DetectorComponent->InstantlyDetectActor(InActor);
+	}
+}
+
+void ACreatureAIController::InvestigateLocation(FVector Location)
+{
+	UBlackboardComponent* BlackboardComponent = GetBlackboardComponent();
+
+	if(BlackboardComponent == nullptr)
+		return;
+
+	if (BlackboardComponent->GetValueAsBool(FBBKeys::PlayerSeen) == false) // don't care if the player is seen
+	{
+		BlackboardComponent->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Investigate);
+		BlackboardComponent->SetValueAsVector(FBBKeys::TargetLocation, Location);
+	}
+}
+
 void ACreatureAIController::BeginPlay()
 {
 	Super::BeginPlay();

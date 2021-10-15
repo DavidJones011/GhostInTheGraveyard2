@@ -91,6 +91,12 @@ public:
 	void SetDetectedActor(class AActor* DetectedActor, float Visibliity);
 
 	/**
+	 * Sets the actor to be instantly detected.
+	 */
+	UFUNCTION(BlueprintCallable)
+	void InstantlyDetectActor(class AActor* DetectedActor);
+
+	/**
 	 * Returns the array of data of all actors that are considered detected.
 	 * Stage param allows to filter the results.
 	 */

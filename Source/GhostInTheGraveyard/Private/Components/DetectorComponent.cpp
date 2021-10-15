@@ -130,6 +130,22 @@ void UDetectorComponent::SetDetectedActor(class AActor* DetectedActor, float Vis
 	DetectionMap.Add(DetectedActor, MoveTemp(NewData));
 }
 
+void UDetectorComponent::InstantlyDetectActor(class AActor* DetectedActor)
+{
+	// exit out early if the detected actor isn't valid
+	if (DetectedActor == nullptr)
+		return;
+
+	SetDetectedActor(DetectedActor, 1.0F);
+
+	FDetectionData* Data = DetectionMap.Find(DetectedActor);
+	if (Data != NULL)
+	{
+		Data->Stage = EDetectionStage::Aware;
+		return;
+	}
+}
+
 void UDetectorComponent::GetDetectedArray(TArray<FDetectionResult>& OutResults, EDetectionStage Stage)
 {
 	for (AActor* Actor : ActiveDetectionSet)
