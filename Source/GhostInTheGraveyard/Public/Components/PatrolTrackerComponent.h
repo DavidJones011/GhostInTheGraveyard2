@@ -104,11 +104,6 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	int32 TrackedPatrolSection = -1;
 
-	/* The current patrol point index target. */
 	UPROPERTY(VisibleAnywhere)
 	int32 TargetPatrolPointIndex = -1;
-
-	/* The patrol point index in which patrolling had started.*/
-	UPROPERTY(VisibleAnywhere)
-	int32 EntryPointIndex = -1;
 };

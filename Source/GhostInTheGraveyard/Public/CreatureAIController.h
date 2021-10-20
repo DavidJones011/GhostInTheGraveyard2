@@ -53,7 +53,16 @@ public:
 	FVector UpdateNextPatrolPoint();
 
 	UFUNCTION(BlueprintCallable)
+	void InstantlyDetect(AActor* InActor);
+
+	UFUNCTION(BlueprintCallable)
+	void InvestigateLocation(FVector Location);
+
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE UDetectorComponent* GetDetectorComponent() { return DetectorComponent;}
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE UPatrolTrackerComponent* GetPatrolTrackerComponent() { return PatrolTrackerComponent; }
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE	UBehaviorTreeComponent* GetBehaviorTreeComponent() { return BehaviorTreeComponent; }
@@ -87,9 +96,9 @@ private:
 	UPROPERTY()
 	class UBehaviorTree* BehaviorTree;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "AI", meta = (AllowPrivateAccess = "true"))
 	class UAISenseConfig_Hearing* HearingConfig;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "AI", meta = (AllowPrivateAccess = "true"))
 	class UAISenseConfig_Sight* SightConfig;
 };

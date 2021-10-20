@@ -21,7 +21,8 @@ enum class EDetectionStage
 	Unaware  = 0,
 	Cautious = 1,
 	Curious  = 2,
-	Aware    = 4
+	Aware    = 4,
+	None     = 5
 };
 
 // Detection Data
@@ -30,7 +31,6 @@ struct FDetectionData
 	class AActor* DetectedActor;
 	float Time;
 	float Visibility;
-	float DetectionRatio;
 	EDetectionStage Stage;
 	EDetectionStatus Status;
 
@@ -38,7 +38,6 @@ struct FDetectionData
 		: DetectedActor(nullptr)
 		, Time(0.0F)
 		, Visibility(0.0F)
-		, DetectionRatio(0.0F)
 		, Stage(EDetectionStage::Unaware)
 		, Status(EDetectionStatus::None)
 	{
@@ -89,6 +88,12 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	void SetDetectedActor(class AActor* DetectedActor, float Visibliity);
+
+	/**
+	 * Sets the actor to be instantly detected.
+	 */
+	UFUNCTION(BlueprintCallable)
+	void InstantlyDetectActor(class AActor* DetectedActor);
 
 	/**
 	 * Returns the array of data of all actors that are considered detected.
