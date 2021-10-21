@@ -13,6 +13,7 @@
 #include "MotionControllerComponent.h"
 #include "XRMotionControllerBase.h"
 #include "CollisionQueryParams.h"
+#include "AI/AIDirectorSubsystem.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -30,7 +31,7 @@ ASurvivorCharacter::ASurvivorCharacter(const FObjectInitializer& ObjectInitializ
 	BaseLookUpRate = 45.f;
 
 
-	// Create a CameraComponent	
+	// Create a CameraComponent
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
 	FirstPersonCameraComponent->SetRelativeLocation(FVector(-39.56f, 1.75f, 64.f)); // Position the camera
@@ -61,10 +62,28 @@ bool ASurvivorCharacter::CanBeSeenFrom(const FVector& ObserverLocation, FVector&
 
 void ASurvivorCharacter::BeginPlay()
 {
-	// Call the base class  
+	// Call the base class
 	Super::BeginPlay();
 
 
+	// Show or hide the two versions of the gun based on whether or not we're using motion controllers.
+	if (bUsingMotionControllers)
+	{
+		VR_Gun->SetHiddenInGame(false, true);
+		Mesh1P->SetHiddenInGame(true, true);
+	}
+	else
+	{
+		VR_Gun->SetHiddenInGame(true, true);
+		Mesh1P->SetHiddenInGame(false, true);
+	}
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+		Director->RegisterPlayer(this);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////

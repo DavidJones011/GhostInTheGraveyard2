@@ -1,7 +1,7 @@
 
 #include "AI/AIPointContextManager.h"
 #include "Containers/Array.h"
-#include "AI/AIWorldContextSubsystem.h"
+#include "AI/AIDirectorSubsystem.h"
 
 AAIPointContextManager::AAIPointContextManager()
 {
@@ -299,7 +299,7 @@ void AAIPointContextManager::BeginPlay()
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		UAIWorldContextSubsystem* ContextSubsystem = GetWorld()->GetSubsystem<UAIWorldContextSubsystem>();
-		ContextSubsystem->RegisterAIContextManager(this);
+		UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+		Director->RegisterAIContextManager(this);
 	}
 }
