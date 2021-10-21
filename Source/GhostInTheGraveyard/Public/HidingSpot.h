@@ -20,9 +20,9 @@ public:
 	AHidingSpot();
 
 private:
-	UStaticMesh hide;
-	USphereComponent hidingPoint;
-	USphereComponent outPoint;
+	UStaticMesh* hide;
+	USphereComponent* hidingPoint;
+	USphereComponent* outPoint;
 
 protected:
 	// Called when the game starts or when spawned

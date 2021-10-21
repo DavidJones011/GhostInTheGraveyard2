@@ -30,12 +30,12 @@ void AHidingSpot::Tick(float DeltaTime)
 }
 
 void AHidingSpot::Hide(ASurvivorCharacter* player) {
-	player->SetActorLocation(hidingPoint.GetComponentLocation());
+	player->SetActorLocation(hidingPoint->GetComponentLocation());
 	player->GetController()->SetIgnoreMoveInput(true);
 }
 
 void AHidingSpot::UnHide(ASurvivorCharacter* player) {
-	player->SetActorLocation(outPoint.GetComponentLocation());
+	player->SetActorLocation(outPoint->GetComponentLocation());
 	player->GetController()->SetIgnoreMoveInput(false);
 }
 

@@ -65,19 +65,6 @@ void ASurvivorCharacter::BeginPlay()
 	// Call the base class
 	Super::BeginPlay();
 
-
-	// Show or hide the two versions of the gun based on whether or not we're using motion controllers.
-	if (bUsingMotionControllers)
-	{
-		VR_Gun->SetHiddenInGame(false, true);
-		Mesh1P->SetHiddenInGame(true, true);
-	}
-	else
-	{
-		VR_Gun->SetHiddenInGame(true, true);
-		Mesh1P->SetHiddenInGame(false, true);
-	}
-
 	UWorld* World = GetWorld();
 	if (World)
 	{
