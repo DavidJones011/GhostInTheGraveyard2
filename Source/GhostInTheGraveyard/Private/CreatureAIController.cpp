@@ -12,7 +12,9 @@
 #include "Components/DetectorComponent.h"
 #include "Components/PatrolTrackerComponent.h"
 #include "EnvironmentQuery/EnvQuery.h"
-#include "AI/AIWorldContextSubsystem.h"
+#include "AI/AIDirectorSubsystem.h"
+#include "CreatureCharacter.h"
+#include "GameFramework/Character.h"
 
 ACreatureAIController::ACreatureAIController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -68,6 +70,22 @@ ACreatureAIController::ACreatureAIController(const FObjectInitializer& ObjectIni
 
 void ACreatureAIController::Tick(float DeltaTime)
 {
+	UBlackboardComponent* BlackboardComponent = GetBlackboardComponent();
+	if (BlackboardComponent && BlackboardComponent->GetValueAsObject(FBBKeys::FoundBreakable) == NULL)
+	{
+		ACreatureCharacter* AICharacter = Cast<ACreatureCharacter>(GetCharacter());
+		if(AICharacter)
+		{
+			FHitResult Result;
+			if (AICharacter->CheckForActorInFront(150.0F, Result))
+			{
+				if (Result.GetActor()->ActorHasTag(FAITags::BreakableTag))
+				{
+					BlackboardComponent->SetValueAsObject(FBBKeys::FoundBreakable, Result.GetActor());
+				}
+			}
+		}
+	}
 }
 
 void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage)
@@ -93,11 +111,12 @@ void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage
 			if (TargetActor == DetectedActor && Stage == (uint32)EDetectionStage::Curious)
 			{
 				GetBlackboardComponent()->SetValueAsBool(FBBKeys::PlayerSeen, false);
-				GetBlackboardComponent()->SetValueAsBool(FBBKeys::ActiveState, ECreatureState::ST_Search);
+				//GetBlackboardComponent()->SetValueAsBool(FBBKeys::ActiveState, ECreatureState::ST_Search);
+				GetBlackboardComponent()->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Patrol);
 
 				GetBlackboardComponent()->ClearValue(FBBKeys::TargetActor);
 				GetBlackboardComponent()->SetValueAsVector(FBBKeys::TargetLocation, DetectedActor->GetActorLocation());
-				//GetBlackboardComponent()->SetValueAsEnum(FBBKeys::InvestigateState, EInvestigateState::Thorough_Search);
+				BlackboardComponent->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Investigate);
 			}
 		}
 	}
@@ -122,16 +141,26 @@ bool ACreatureAIController::SendAIToPatrolPoint(AAIPointContextManager* Manager,
 {
 	if (PatrolTrackerComponent)
 	{
-		ACharacter* Chracter = GetCharacter();
-		bool bSuccess = PatrolTrackerComponent->SetTrackedPatrolPoint(Manager, Section, Index) && GetCharacter();
-		if (bSuccess)
+		ACharacter* AICharacter = GetCharacter();
+		bool bSuccess = (AICharacter != nullptr) && PatrolTrackerComponent->SetTrackedPatrolPoint(Manager, Section, Index);
+		
+		FVector Location = AICharacter->GetActorLocation();
+		if (bSuccess && bTeleport)
 		{
-			if (bTeleport)
-			{
-				GetCharacter()->SetActorLocation(UpdateNextPatrolPoint());
-			}
-			return true;
+			Location = UpdateNextPatrolPoint();
+			GetCharacter()->SetActorLocation(Location);
 		}
+
+		UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
+		if (BlackboardComp)
+		{
+			if (BlackboardComp->GetValueAsEnum(FBBKeys::ActiveState) == ECreatureState::ST_Patrol)
+			{
+				BlackboardComp->SetValueAsVector(FBBKeys::TargetLocation, Location);
+			}
+		}
+
+		return true;
 	}
 	return false;
 }
@@ -140,16 +169,31 @@ bool ACreatureAIController::SendAIToPatrolSection(AAIPointContextManager* Manage
 {
 	if (PatrolTrackerComponent)
 	{
-		ACharacter* Chracter = GetCharacter();
-		bool bSuccess = PatrolTrackerComponent->SetTrackedPatrolSection(Manager, Section) && GetCharacter();
-		if (bSuccess)
-		{			
-			if (bTeleport)
-			{
-				GetCharacter()->SetActorLocation(UpdateNextPatrolPoint());
-			}
-			return true;
+		if (Section == PatrolTrackerComponent->GetTrackedPatrolSection())
+		{
+			return false;
 		}
+
+		ACharacter* AICharacter = GetCharacter();
+		bool bSuccess = (AICharacter != nullptr) && PatrolTrackerComponent->SetTrackedPatrolSection(Manager, Section);
+		
+		FVector Location = AICharacter->GetActorLocation();
+		if (bSuccess && bTeleport)
+		{
+			Location = UpdateNextPatrolPoint();
+			GetCharacter()->SetActorLocation(Location);
+		}
+
+		UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
+		if (BlackboardComp)
+		{
+			if (BlackboardComp->GetValueAsEnum(FBBKeys::ActiveState) == ECreatureState::ST_Patrol)
+			{
+				BlackboardComp->SetValueAsVector(FBBKeys::TargetLocation, Location);
+			}
+		}
+
+		return true;
 	}
 	return false;
 }
@@ -161,6 +205,29 @@ FVector ACreatureAIController::UpdateNextPatrolPoint()
 		return PatrolTrackerComponent->UpdateNextPatrolLocation();
 	}
 	return FVector(FLT_MAX); // this is how UE4 AI perceives invalid location
+}
+
+void ACreatureAIController::InstantlyDetect(AActor* InActor)
+{
+	ACharacter* TargetCharacter = Cast<ACharacter>(InActor);
+	if (TargetCharacter && DetectorComponent)
+	{
+		DetectorComponent->InstantlyDetectActor(InActor);
+	}
+}
+
+void ACreatureAIController::InvestigateLocation(FVector Location)
+{
+	UBlackboardComponent* BlackboardComponent = GetBlackboardComponent();
+
+	if(BlackboardComponent == nullptr)
+		return;
+
+	if (BlackboardComponent->GetValueAsBool(FBBKeys::PlayerSeen) == false) // don't care if the player is seen
+	{
+		BlackboardComponent->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Investigate);
+		BlackboardComponent->SetValueAsVector(FBBKeys::TargetLocation, Location);
+	}
 }
 
 void ACreatureAIController::BeginPlay()
@@ -175,8 +242,8 @@ void ACreatureAIController::BeginPlay()
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		UAIWorldContextSubsystem* ContextSubsystem = GetWorld()->GetSubsystem<UAIWorldContextSubsystem>();
-		ContextSubsystem->RegisterAIController(this);
+		UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+		Director->RegisterAIController(this);
 	}
 }
 

@@ -65,7 +65,6 @@ void UDetectorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 			Data.Time -= LooseTargetRate * DeltaTime;
 
 		Data.Time = FMath::Clamp<float>(Data.Time, 0.0F, TimeNeededToBeAware + LooseTargetDelay);
-		Data.DetectionRatio = FMath::Clamp<float>(Data.Time / TimeNeededToBeAware, 0.0F, 1.0F);
 
 		EDetectionStage Stage = EDetectionStage::Unaware;
 		if (Data.Time >= TimeNeededToBeAware)
@@ -123,11 +122,27 @@ void UDetectorComponent::SetDetectedActor(class AActor* DetectedActor, float Vis
 	FDetectionData NewData;
 	NewData.DetectedActor = DetectedActor;
 	NewData.Visibility = Visibility;
-	NewData.Stage = EDetectionStage::Unaware;
+	NewData.Stage = EDetectionStage::None;
 	NewData.Status = EDetectionStatus::Pending;
 
 	PendingDetectionSet.Add(DetectedActor);
 	DetectionMap.Add(DetectedActor, MoveTemp(NewData));
+}
+
+void UDetectorComponent::InstantlyDetectActor(class AActor* DetectedActor)
+{
+	// exit out early if the detected actor isn't valid
+	if (DetectedActor == nullptr)
+		return;
+
+	SetDetectedActor(DetectedActor, 1.0F);
+
+	FDetectionData* Data = DetectionMap.Find(DetectedActor);
+	if (Data != NULL)
+	{
+		Data->Time = TimeNeededToBeAware + LooseTargetDelay;
+		Data->Visibility = 0.0F;
+	}
 }
 
 void UDetectorComponent::GetDetectedArray(TArray<FDetectionResult>& OutResults, EDetectionStage Stage)
@@ -145,7 +160,6 @@ void UDetectorComponent::GetDetectedArray(TArray<FDetectionResult>& OutResults, 
 			FDetectionResult Result;
 			Result.Actor = Actor;
 			Result.Stage = Data.Stage;
-			Result.Value = Data.DetectionRatio;
 			OutResults.Push(Result);
 		}
 	}

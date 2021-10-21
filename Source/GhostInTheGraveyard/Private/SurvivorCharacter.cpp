@@ -13,6 +13,7 @@
 #include "MotionControllerComponent.h"
 #include "XRMotionControllerBase.h"
 #include "CollisionQueryParams.h"
+#include "AI/AIDirectorSubsystem.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -127,6 +128,13 @@ void ASurvivorCharacter::BeginPlay()
 	{
 		VR_Gun->SetHiddenInGame(true, true);
 		Mesh1P->SetHiddenInGame(false, true);
+	}
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+		Director->RegisterPlayer(this);
 	}
 }
 

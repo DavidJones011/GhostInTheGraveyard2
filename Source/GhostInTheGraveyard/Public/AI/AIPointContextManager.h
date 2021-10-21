@@ -177,5 +177,6 @@ public:
 	FVector* GetPatrolPointVectorPtr(int32 SectionID, int32 PointIndex);
 
 protected:
+
 	virtual void BeginPlay() override;
 };

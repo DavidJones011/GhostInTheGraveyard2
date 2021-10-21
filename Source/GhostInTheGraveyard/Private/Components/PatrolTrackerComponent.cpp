@@ -4,6 +4,8 @@
 #include "Components/PatrolTrackerComponent.h"
 #include "AI/AIPointContextManager.h"
 #include "EngineUtils.h"
+#include "GameFramework/Controller.h"
+#include "GameFramework/Character.h"
 
 // Sets default values for this component's properties
 UPatrolTrackerComponent::UPatrolTrackerComponent()
@@ -49,15 +51,24 @@ void UPatrolTrackerComponent::TickComponent(float DeltaTime, ELevelTick TickType
 
 bool UPatrolTrackerComponent::SetTrackedPatrolSection(AAIPointContextManager* Manager, int32 SectionID)
 {
+	if(SectionID == TrackedPatrolSection)
+		return false;
+
 	if (Manager)
 	{
 		FPatrolPointData ClosestData;
-		if (Manager->TryGetClosestPatrolPointDataFromSection(SectionID, GetOwner()->GetActorLocation(), ClosestData))
+		FVector Location;
+		AController* Controller = Cast<AController>(GetOwner());
+		if (Controller)
+			Location = Controller->GetCharacter()->GetActorLocation();
+		else
+			Location = GetOwner()->GetActorLocation();
+
+		if (Manager->TryGetClosestPatrolPointDataFromSection(SectionID, Location, ClosestData))
 		{
 			TrackedPatrolPathManager = Manager;
 			TargetPatrolPointIndex = ClosestData.Index;
 			TrackedPatrolSection = ClosestData.SectionId;
-			EntryPointIndex = TargetPatrolPointIndex;
 			return true;
 		}
 	}
@@ -70,12 +81,11 @@ bool UPatrolTrackerComponent::SetTrackedPatrolPoint(AAIPointContextManager* Mana
 	if (Manager)
 	{
 		FPatrolPointData Data;
-		if (Manager->TryGetPatrolPointData(SectionID, Index, Data))
+		if (Manager->TryGetPatrolPointData(Index, SectionID, Data))
 		{
 			TrackedPatrolPathManager = Manager;
 			TargetPatrolPointIndex = Data.Index;
 			TrackedPatrolSection = Data.SectionId;
-			EntryPointIndex = TargetPatrolPointIndex;
 			return true;
 		}
 	}
@@ -110,7 +120,6 @@ FVector UPatrolTrackerComponent::FollowClosestIndexInSection(AAIPointContextMana
 		{
 			TargetPatrolPointIndex = ClosestData.Index;
 			TrackedPatrolSection = ClosestData.SectionId;
-			EntryPointIndex = TargetPatrolPointIndex;
 			return ClosestData.Location;
 		}
 	}

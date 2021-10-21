@@ -16,9 +16,15 @@ namespace FBBKeys
 	const static FName TargetActor     = TEXT("TargetActor");
 	const static FName PlayerSeen      = TEXT("PlayerSeen");
 	const static FName ActiveState     = TEXT("ActiveState");
+	const static FName FoundBreakable  = TEXT("FoundBreakable");
 }
 
 namespace FAIPaths
 {
 	const static TCHAR* CreatureBehaviorTreePath = TEXT("BehaviorTree'/Game/AI/Creature/Behavior/BT_Creature.BT_Creature'");
+}
+
+namespace FAITags
+{
+	const static FName BreakableTag = TEXT("Breakable_Obstacle");
 }
