@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "HidingSpot.generated.h"
 #include "GameFramework/Character.h"
 #include "Components/SphereComponent.h"
 #include "SurvivorCharacter.h"
+
+#include "HidingSpot.generated.h"
 
 UCLASS()
 class GHOSTINTHEGRAVEYARD_API AHidingSpot : public AActor
