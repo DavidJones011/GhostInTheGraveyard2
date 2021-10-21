@@ -86,6 +86,7 @@ void ASurvivorCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ASurvivorCharacter::OnResetVR);
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASurvivorCharacter::Interact);
 
 	// Bind movement events
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASurvivorCharacter::MoveForward);
@@ -136,4 +137,13 @@ void ASurvivorCharacter::LookUpAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+}
+
+void ASurvivorCharacter::Interact() {
+	if (interact.IsBound()) {
+		if (GEngine) {
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Interacted!"));
+		}
+		interact.Broadcast(this);
+	}
 }

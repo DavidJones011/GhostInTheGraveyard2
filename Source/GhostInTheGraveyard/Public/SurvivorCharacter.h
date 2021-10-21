@@ -25,6 +25,7 @@ UCLASS(config = Game)
 class GHOSTINTHEGRAVEYARD_API ASurvivorCharacter : public AGhostInTheGraveyardCharacter, public IAISightTargetInterface
 {
 	GENERATED_BODY()
+	DECLARE_MULTICAST_DELEGATE_OneParam(FPlayerInteract, ASurvivorCharacter*);
 
 public:
 
@@ -37,7 +38,7 @@ private:
 
 	/** First person camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-		UCameraComponent* FirstPersonCameraComponent;
+	UCameraComponent* FirstPersonCameraComponent;
 
 
 protected:
@@ -52,7 +53,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 		float BaseLookUpRate;
 
-
+	FPlayerInteract interact;
 protected:
 
 	/** Resets HMD orientation and position in VR. */
@@ -75,6 +76,8 @@ protected:
 	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
 	 */
 	void LookUpAtRate(float Rate);
+
+	void Interact();
 
 protected:
 	// APawn interface
