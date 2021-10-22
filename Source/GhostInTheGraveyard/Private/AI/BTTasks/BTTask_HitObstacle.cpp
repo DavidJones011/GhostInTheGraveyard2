@@ -2,7 +2,8 @@
 
 
 #include "AI/BTTasks/BTTask_HitObstacle.h"
-#include "Gizmos/NavModifier_BreakableObstacle.h"
+/*#include "Gizmos/NavModifier_BreakableObstacle.h"*/
+#include "Gizmos/BreakableObstacle.h"
 #include "CreatureCharacter.h"
 #include "CreatureAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -12,7 +13,7 @@ UBTTask_HitObstacle::UBTTask_HitObstacle(const FObjectInitializer& ObjectInitial
 {
 	NodeName = "Hit Obstacle";
 
-	BlackboardKey.AddObjectFilter(this, GET_MEMBER_NAME_CHECKED(UBTTask_HitObstacle, BlackboardKey), ANavModifier_BreakableObstacle::StaticClass());
+	BlackboardKey.AddObjectFilter(this, GET_MEMBER_NAME_CHECKED(UBTTask_HitObstacle, BlackboardKey), ABreakableObstacle::StaticClass());
 }
 
 EBTNodeResult::Type UBTTask_HitObstacle::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
@@ -23,7 +24,7 @@ EBTNodeResult::Type UBTTask_HitObstacle::ExecuteTask(UBehaviorTreeComponent& Own
 		UBlackboardComponent* BlackboardComp = OwnerComp.GetBlackboardComponent();
 		if (ensure(BlackboardComp))
 		{
-			ANavModifier_BreakableObstacle* Obstacle = Cast<ANavModifier_BreakableObstacle>(BlackboardComp->GetValueAsObject(BlackboardKey.SelectedKeyName));
+			ABreakableObstacle* Obstacle = Cast<ABreakableObstacle>(BlackboardComp->GetValueAsObject(BlackboardKey.SelectedKeyName));
 			if (Obstacle != NULL)
 			{				
 				Obstacle->TakeDamage(Damage, FDamageEvent(), CreatureController, CreatureController->GetCharacter());
