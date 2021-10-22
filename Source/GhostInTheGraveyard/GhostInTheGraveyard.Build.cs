@@ -15,7 +15,8 @@ public class GhostInTheGraveyard : ModuleRules
 			"InputCore", 
 			"HeadMountedDisplay",
 			"AIModule" ,
-			"GameplayTasks"
+			"GameplayTasks",
+			"RenderCore"
 		});
 	}
 }
