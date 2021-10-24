@@ -6,6 +6,7 @@
 #include "Gizmos/NavArea_BreakableObstacle.h"
 #include "Components/FixNavModifierComponent.h"
 #include "Components/BoxComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 ABreakableObstacle::ABreakableObstacle(const FObjectInitializer& ObjectInitializer)
 {
@@ -24,6 +25,13 @@ ABreakableObstacle::ABreakableObstacle(const FObjectInitializer& ObjectInitializ
 
 	BrokenSceneRoot = CreateDefaultSubobject<USceneComponent>("Broken Mesh(s) Root");
 	BrokenSceneRoot->SetupAttachment(BaseMeshComponent);
+	
+	//setup camera shake
+	static ConstructorHelpers::FClassFinder<UCameraShakeBase> CameraShakeClass(TEXT("/Game/Effects/CameraShakes/BP_BarricadeCameraShake"));
+	if (CameraShakeClass.Succeeded())
+	{
+		CameraShake = CameraShakeClass.Class;
+	}
 }
 
 // Called when the game starts or when spawned
@@ -166,11 +174,16 @@ float ABreakableObstacle::TakeDamage(float DamageAmount, struct FDamageEvent con
 			Health -= DamageAmount;
 		}
 
+		if (CameraShake)
+		{
+			UGameplayStatics::PlayWorldCameraShake(GetWorld(), CameraShake, GetActorLocation(), 0.0F, 600.0F, 0.5F);
+		}
+
 		if (FMath::IsNearlyZero(Health))
 		{
 			Break();
 			
-			AddImpulseBrokenComponents(DamageCauser->GetActorForwardVector() * 200.0F, DamageCauser->GetActorLocation(), true);
+			AddImpulseBrokenComponents(DamageCauser->GetActorForwardVector() * 200.0F, DamageCauser->GetActorLocation(), true);		
 		}
 
 		return DamageDealt;

@@ -47,6 +47,10 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	bool bBroken = false;
 
+	UPROPERTY(VisibleAnywhere)
+	TSubclassOf<UCameraShakeBase> CameraShake;
+
+
 public:	
 	// Sets default values for this actor's properties
 	ABreakableObstacle(const FObjectInitializer& ObjectInitializer);
