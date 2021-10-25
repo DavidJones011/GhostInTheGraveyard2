@@ -2,7 +2,7 @@
 
 
 #include "SurvivorCharacter.h"
-#include "GhostInTheGraveyardProjectile.h"
+#include "Interactable.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -12,8 +12,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "MotionControllerComponent.h"
 #include "XRMotionControllerBase.h"
+#include <Runtime/Engine/Classes/GameFramework/SpringArmComponent.h>
+#include "XRMotionControllerBase.h"
 #include "CollisionQueryParams.h"
 #include "AI/AIDirectorSubsystem.h"
+
+
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -73,6 +77,21 @@ void ASurvivorCharacter::BeginPlay()
 	}
 }
 
+void ASurvivorCharacter::Tick(float DeltaSeconds)
+{
+	ECollisionChannel DefaultSightCollisionChannel = ECollisionChannel::ECC_WorldDynamic;
+	FHitResult HitResult;
+	const bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, GetActorLocation(), GetActorForwardVector()+GetActorLocation()
+		, DefaultSightCollisionChannel
+		, FCollisionQueryParams("", true));
+
+	IInteractable* interact = Cast<IInteractable>(HitResult.Actor);
+	if (bHit && interact && interact->CanInteract(this))
+	{
+		interact->Interact(this);
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -86,7 +105,6 @@ void ASurvivorCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ASurvivorCharacter::OnResetVR);
-	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASurvivorCharacter::Interact);
 
 	// Bind movement events
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASurvivorCharacter::MoveForward);
@@ -137,13 +155,4 @@ void ASurvivorCharacter::LookUpAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
-}
-
-void ASurvivorCharacter::Interact() {
-	if (interact.IsBound()) {
-		if (GEngine) {
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Interacted!"));
-		}
-		interact.Broadcast(this);
-	}
 }
