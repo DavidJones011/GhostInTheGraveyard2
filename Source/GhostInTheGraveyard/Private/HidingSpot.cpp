@@ -2,9 +2,7 @@
 
 
 #include "HidingSpot.h"
-#include "Kismet/GameplayStatics.h"
-#include "GameFramework/Character.h"
-#include "SurvivorCharacter.h"
+
 
 // Sets default values
 AHidingSpot::AHidingSpot()
@@ -36,27 +34,19 @@ AHidingSpot::AHidingSpot()
 void AHidingSpot::BeginPlay()
 {
 	Super::BeginPlay();
-	ASurvivorCharacter* player = (ASurvivorCharacter*)UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
-
-	player->interact.AddUObject(this, &AHidingSpot::ToggleHide);
 }
 
-// Called every frame
-void AHidingSpot::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-	
-
-}
-
-void AHidingSpot::InteractHandler(ASurvivorCharacter* player) {
+void AHidingSpot::Interact(ASurvivorCharacter* player) {
 	if (collider->IsOverlappingActor(player)) {
 		this->ToggleHide(player);
 	}
 }
+bool AHidingSpot::CanInteract(ASurvivorCharacter* player) {
+	return true;
+}
 
 void AHidingSpot::ToggleHide(ASurvivorCharacter* player) {
-		if (PlayerHiding) {
+		/*if (PlayerHiding) {
 			player->SetActorLocation(outPoint->GetComponentLocation());
 			player->GetController()->SetIgnoreMoveInput(false);
 
@@ -75,6 +65,6 @@ void AHidingSpot::ToggleHide(ASurvivorCharacter* player) {
 			if (GEngine) {
 				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Hiding"));
 			}
-		}
+		}*/
 }
 

@@ -2,30 +2,20 @@
 
 #pragma once
 
+
+
+
 #include "GhostInTheGraveyardCharacter.h"
-#include "GhostInTheGraveyardProjectile.h"
-#include "Animation/AnimInstance.h"
-#include "Camera/CameraComponent.h"
-#include "Components/CapsuleComponent.h"
-#include "Components/InputComponent.h"
-#include "GameFramework/InputSettings.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
-#include "Kismet/GameplayStatics.h"
-#include "MotionControllerComponent.h"
 #include "Perception/AISightTargetInterface.h"
-#include "XRMotionControllerBase.h"
-#include <Runtime/Engine/Classes/GameFramework/SpringArmComponent.h>
+
 #include "SurvivorCharacter.generated.h"
 
+class IInteractable;
 
-/**
- * 
- */
 UCLASS(config = Game)
 class GHOSTINTHEGRAVEYARD_API ASurvivorCharacter : public AGhostInTheGraveyardCharacter, public IAISightTargetInterface
 {
 	GENERATED_BODY()
-	DECLARE_MULTICAST_DELEGATE_OneParam(FPlayerInteract, ASurvivorCharacter*);
 
 public:
 
@@ -39,10 +29,12 @@ private:
 	/** First person camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FirstPersonCameraComponent;
+	IInteractable* currentInteractable;
 
 
 protected:
 	virtual void BeginPlay();
+	virtual void Tick(float DeltaSeconds);
 
 public:
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
@@ -52,8 +44,6 @@ public:
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 		float BaseLookUpRate;
-
-	FPlayerInteract interact;
 protected:
 
 	/** Resets HMD orientation and position in VR. */
@@ -77,8 +67,6 @@ protected:
 	 */
 	void LookUpAtRate(float Rate);
 
-	void Interact();
-
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
@@ -88,5 +76,7 @@ protected:
 public:
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
-	
+
+
+
 };
