@@ -4,6 +4,7 @@
 #include "CreatureCharacter.h"
 #include "CreatureAIController.h"
 #include "CollisionQueryParams.h"
+#include "Components/CapsuleComponent.h"
 
 // Sets default values
 ACreatureCharacter::ACreatureCharacter(const FObjectInitializer& ObjectInitializer)
@@ -38,9 +39,15 @@ bool ACreatureCharacter::CheckForActorInFront(float Distance, FHitResult& OutRes
 {
 	const FVector TargetLocation = GetActorLocation() + GetActorForwardVector() * Distance;
 	const ECollisionChannel DefaultSightCollisionChannel = ECollisionChannel::ECC_WorldDynamic;
-	const bool bHit = GetWorld()->LineTraceSingleByChannel(OutResult, GetActorLocation(), TargetLocation
+
+	const bool bHit = GetWorld()->SweepSingleByChannel(OutResult, GetActorLocation(), TargetLocation, FQuat::Identity
 		, DefaultSightCollisionChannel
+		, GetCapsuleComponent()->GetCollisionShape()
 		, FCollisionQueryParams("", true, this));
+
+// 	const bool bHit = GetWorld()->LineTraceSingleByChannel(OutResult, GetActorLocation(), TargetLocation
+// 		, DefaultSightCollisionChannel
+// 		, FCollisionQueryParams("", true, this));
 	return bHit;
 }
 

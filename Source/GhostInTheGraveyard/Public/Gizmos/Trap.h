@@ -4,16 +4,30 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/BoxComponent.h"
+#include "Interactable.h"
+#include "SurvivorCharacter.h"
+
 #include "Trap.generated.h"
 
+
 UCLASS()
-class GHOSTINTHEGRAVEYARD_API ATrap : public AActor
+class GHOSTINTHEGRAVEYARD_API ATrap : public AActor, public IInteractable
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
 	ATrap();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components");
+	class USceneComponent* pivot;
+
+	UPROPERTY(EditAnywhere, Category = "Components");
+	class UStaticMeshComponent* hide;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components");
+	class UBoxComponent* collider;
 
 protected:
 	// Called when the game starts or when spawned
@@ -22,5 +36,14 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	virtual void Interact(ASurvivorCharacter* player);
+	virtual void EndInteract(ASurvivorCharacter* player);
+	virtual bool CanInteract(ASurvivorCharacter* player);
+	
+
+private:
+	ASurvivorCharacter* trappedPlayer;
+	float escapeProgress;
+	bool escaping;
 
 };
