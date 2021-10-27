@@ -16,6 +16,7 @@
 #include "XRMotionControllerBase.h"
 #include "CollisionQueryParams.h"
 #include "AI/AIDirectorSubsystem.h"
+#include "HidingSpot.h"
 
 
 
@@ -39,7 +40,6 @@ ASurvivorCharacter::ASurvivorCharacter(const FObjectInitializer& ObjectInitializ
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
 	FirstPersonCameraComponent->SetRelativeLocation(FVector(-39.56f, 1.75f, 64.f)); // Position the camera
-
 }
 
 //TODO: Implemented this way for now, but should change in the future to fit the games design
@@ -77,21 +77,6 @@ void ASurvivorCharacter::BeginPlay()
 	}
 }
 
-void ASurvivorCharacter::Tick(float DeltaSeconds)
-{
-	ECollisionChannel DefaultSightCollisionChannel = ECollisionChannel::ECC_WorldDynamic;
-	FHitResult HitResult;
-	const bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, GetActorLocation(), GetActorForwardVector()+GetActorLocation()
-		, DefaultSightCollisionChannel
-		, FCollisionQueryParams("", true));
-
-	IInteractable* interact = Cast<IInteractable>(HitResult.Actor);
-	if (bHit && interact && interact->CanInteract(this))
-	{
-		interact->Interact(this);
-	}
-}
-
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -105,6 +90,8 @@ void ASurvivorCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ASurvivorCharacter::OnResetVR);
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASurvivorCharacter::Interact);
+	PlayerInputComponent->BindAction("Interact", IE_Released, this, &ASurvivorCharacter::EndInteract);
 
 	// Bind movement events
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASurvivorCharacter::MoveForward);
@@ -155,4 +142,59 @@ void ASurvivorCharacter::LookUpAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+}
+
+void ASurvivorCharacter::Interact()
+{
+	if (currentInteractable) {
+		currentInteractable->Interact(this);
+	}
+	
+}
+
+void ASurvivorCharacter::EndInteract()
+{
+	if (currentInteractable) {
+		currentInteractable->EndInteract(this);
+	}
+}
+
+
+bool ASurvivorCharacter::Hide(AHidingSpot* spot)
+{
+	if (!Hidden) {
+		Hidden = true;
+		GetController()->SetIgnoreMoveInput(true);
+		SetActorLocation(spot->hidingPoint->GetComponentLocation());
+		currentInteractable = spot;
+		return true;
+	} else {
+		return false;
+	}
+
+	
+}
+void ASurvivorCharacter::Leave(AHidingSpot* spot) {
+	if (Hidden) {
+		Hidden = false;
+		GetController()->SetIgnoreMoveInput(false);
+		SetActorLocation(spot->outPoint->GetComponentLocation());
+	}
+}
+
+bool ASurvivorCharacter::Trap(ATrap* trap) {
+	if (!Trapped) {
+		GetController()->SetIgnoreMoveInput(true);
+		currentInteractable = (IInteractable*) trap;
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+void ASurvivorCharacter::EscapeTrap(ATrap* trap) {
+	if (Trapped) {
+		GetController()->SetIgnoreMoveInput(false);
+	}
 }
