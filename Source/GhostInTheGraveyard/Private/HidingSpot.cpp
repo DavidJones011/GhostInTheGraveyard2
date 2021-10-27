@@ -27,44 +27,23 @@ AHidingSpot::AHidingSpot()
 	outPoint->InitSphereRadius(10.0f);
 	outPoint->SetupAttachment(pivot);
 
-	PlayerHiding = false;
-}
-
-// Called when the game starts or when spawned
-void AHidingSpot::BeginPlay()
-{
-	Super::BeginPlay();
+	PlayerHiding = 0;
 }
 
 void AHidingSpot::Interact(ASurvivorCharacter* player) {
-	if (collider->IsOverlappingActor(player)) {
-		this->ToggleHide(player);
+	if (PlayerHiding == player) {
+		player->Leave(this);
 	}
+	else {
+		if (player->Hide(this)) {
+			PlayerHiding = player;
+		}
+	}
+}
+
+void AHidingSpot::EndInteract(ASurvivorCharacter* player) {
 }
 bool AHidingSpot::CanInteract(ASurvivorCharacter* player) {
 	return true;
-}
-
-void AHidingSpot::ToggleHide(ASurvivorCharacter* player) {
-		/*if (PlayerHiding) {
-			player->SetActorLocation(outPoint->GetComponentLocation());
-			player->GetController()->SetIgnoreMoveInput(false);
-
-			PlayerHiding = false;
-
-			Player_OnHide.Broadcast(hidingPoint->GetComponentLocation());
-			if (GEngine) {
-				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("UnHiding!"));
-			}
-		} else {
-			player->SetActorLocation(hidingPoint->GetComponentLocation());
-			player->GetController()->SetIgnoreMoveInput(true);
-
-			PlayerHiding = true;
-
-			if (GEngine) {
-				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Hiding"));
-			}
-		}*/
 }
 

@@ -11,6 +11,8 @@
 #include "SurvivorCharacter.generated.h"
 
 class IInteractable;
+class AHidingSpot;
+class ATrap;
 
 UCLASS(config = Game)
 class GHOSTINTHEGRAVEYARD_API ASurvivorCharacter : public AGhostInTheGraveyardCharacter, public IAISightTargetInterface
@@ -34,7 +36,6 @@ private:
 
 protected:
 	virtual void BeginPlay();
-	virtual void Tick(float DeltaSeconds);
 
 public:
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
@@ -79,4 +80,23 @@ public:
 
 
 
+	// Game Logic Functions and variables
+
+	//Interaction
+	void Interact();
+	void EndInteract();
+
+	UPROPERTY(EditAnywhere)
+	int InteractRange = 500;
+
+	// Hiding
+	bool Hide(AHidingSpot* spot);
+	void Leave(AHidingSpot* spot);
+	bool Hidden;
+
+
+
+	bool Trap(ATrap* trap);
+	void EscapeTrap(ATrap* trap);
+	bool Trapped;
 };

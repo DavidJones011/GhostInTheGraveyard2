@@ -40,17 +40,13 @@ public:
 
 
 private:
-	bool PlayerHiding;
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	ASurvivorCharacter* PlayerHiding;
 
 public:	
-
+	UFUNCTION(BlueprintCallable)
 	virtual void Interact(ASurvivorCharacter* player) override;
+	UFUNCTION(BlueprintCallable)
 	virtual bool CanInteract(ASurvivorCharacter* player) override;
-
-	UFUNCTION(BlueprintCallable, Category = "HidingSpot")
-	void ToggleHide(ASurvivorCharacter * player);
+	UFUNCTION(BlueprintCallable)
+	virtual void EndInteract(ASurvivorCharacter* player) override;
 };
