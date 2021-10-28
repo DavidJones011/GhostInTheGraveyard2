@@ -183,7 +183,12 @@ float ABreakableObstacle::TakeDamage(float DamageAmount, struct FDamageEvent con
 		{
 			Break();
 			
-			AddImpulseBrokenComponents(DamageCauser->GetActorForwardVector() * 200.0F, DamageCauser->GetActorLocation(), true);		
+			AddImpulseBrokenComponents(DamageCauser->GetActorForwardVector() * 200.0F, DamageCauser->GetActorLocation(), true);
+			if(BreakSound) UGameplayStatics::PlaySoundAtLocation(GetWorld(), BreakSound, GetActorLocation());
+		}
+		else
+		{
+			if(HitSound) UGameplayStatics::PlaySoundAtLocation(GetWorld(), HitSound, GetActorLocation());
 		}
 
 		return DamageDealt;

@@ -37,7 +37,7 @@ void ACreatureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 bool ACreatureCharacter::CheckForActorInFront(float Distance, FHitResult& OutResult)
 {
-	const FVector TargetLocation = GetActorLocation() + GetActorForwardVector() * Distance;
+	const FVector TargetLocation = GetActorLocation() + GetVelocity().GetSafeNormal() * Distance;
 	const ECollisionChannel DefaultSightCollisionChannel = ECollisionChannel::ECC_WorldDynamic;
 
 	const bool bHit = GetWorld()->SweepSingleByChannel(OutResult, GetActorLocation(), TargetLocation, FQuat::Identity
