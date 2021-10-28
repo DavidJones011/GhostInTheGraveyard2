@@ -39,7 +39,6 @@ ASurvivorCharacter::ASurvivorCharacter(const FObjectInitializer& ObjectInitializ
 	// Create a CameraComponent
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
-	FirstPersonCameraComponent->SetRelativeLocation(FVector(-39.56f, 1.75f, 64.f)); // Position the camera
 }
 
 //TODO: Implemented this way for now, but should change in the future to fit the games design
@@ -57,8 +56,16 @@ bool ASurvivorCharacter::CanBeSeenFrom(const FVector& ObserverLocation, FVector&
 	NumberOfLoSChecksPerformed = 1;
 	if (bHit && HitResult.Actor == this)
 	{
-		OutSightStrength = 1.0F;
-		bSuccess = true;
+		if (Hidden) {
+			OutSightStrength = 0.0f;
+			bSuccess = true;
+		}
+		else {
+			OutSightStrength = 1.0F;
+			bSuccess = true;
+		}
+
+		
 	}
 
 	return bSuccess;
@@ -86,12 +93,11 @@ void ASurvivorCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	check(PlayerInputComponent);
 
 	// Bind jump events
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASurvivorCharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ASurvivorCharacter::OnResetVR);
-	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASurvivorCharacter::Interact);
-	PlayerInputComponent->BindAction("Interact", IE_Released, this, &ASurvivorCharacter::EndInteract);
+
 
 	// Bind movement events
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASurvivorCharacter::MoveForward);
@@ -165,8 +171,10 @@ bool ASurvivorCharacter::Hide(AHidingSpot* spot)
 	if (!Hidden) {
 		Hidden = true;
 		GetController()->SetIgnoreMoveInput(true);
+		GetController()->StopMovement();
 		SetActorLocation(spot->hidingPoint->GetComponentLocation());
-		currentInteractable = spot;
+		FirstPersonCameraComponent->SetRelativeLocation(cameraHidePosition);
+
 		return true;
 	} else {
 		return false;
@@ -179,6 +187,7 @@ void ASurvivorCharacter::Leave(AHidingSpot* spot) {
 		Hidden = false;
 		GetController()->SetIgnoreMoveInput(false);
 		SetActorLocation(spot->outPoint->GetComponentLocation());
+		FirstPersonCameraComponent->SetRelativeLocation(cameraNormalPosition);
 	}
 }
 
@@ -186,6 +195,7 @@ bool ASurvivorCharacter::Trap(ATrap* trap) {
 	if (!Trapped) {
 		GetController()->SetIgnoreMoveInput(true);
 		currentInteractable = (IInteractable*) trap;
+		Trapped = true;
 		return true;
 	}
 	else {
@@ -196,5 +206,13 @@ bool ASurvivorCharacter::Trap(ATrap* trap) {
 void ASurvivorCharacter::EscapeTrap(ATrap* trap) {
 	if (Trapped) {
 		GetController()->SetIgnoreMoveInput(false);
+		currentInteractable = 0;
+		Trapped = false;
+	}
+}
+
+void ASurvivorCharacter::Jump() {
+	if (!Hidden && !Trapped) {
+		Super::Jump();
 	}
 }

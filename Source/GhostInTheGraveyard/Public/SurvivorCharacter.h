@@ -31,7 +31,10 @@ private:
 	/** First person camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FirstPersonCameraComponent;
+
 	IInteractable* currentInteractable;
+	const FVector cameraNormalPosition = FVector(0.0f,0.0f,70.0f);
+	const FVector cameraHidePosition = FVector(0.0f, 0.0f, 0.0f);
 
 
 protected:
@@ -83,8 +86,12 @@ public:
 	// Game Logic Functions and variables
 
 	//Interaction
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	void Interact();
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	void EndInteract();
+
+
 
 	UPROPERTY(EditAnywhere)
 	int InteractRange = 500;
@@ -92,11 +99,16 @@ public:
 	// Hiding
 	bool Hide(AHidingSpot* spot);
 	void Leave(AHidingSpot* spot);
+
+	UPROPERTY(BlueprintReadOnly)
 	bool Hidden;
 
 
-
+	UFUNCTION(BlueprintCallable,Category="GetFukd")
 	bool Trap(ATrap* trap);
+
 	void EscapeTrap(ATrap* trap);
 	bool Trapped;
+
+	virtual void Jump() override;
 };

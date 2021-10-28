@@ -33,6 +33,7 @@ AHidingSpot::AHidingSpot()
 void AHidingSpot::Interact(ASurvivorCharacter* player) {
 	if (PlayerHiding == player) {
 		player->Leave(this);
+		PlayerHiding = 0;
 	}
 	else {
 		if (player->Hide(this)) {

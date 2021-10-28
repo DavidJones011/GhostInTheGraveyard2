@@ -43,14 +43,14 @@ public:
 	virtual void EndInteract(ASurvivorCharacter* player);
 	UFUNCTION(BlueprintCallable)
 	virtual bool CanInteract(ASurvivorCharacter* player);
-
-	void OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UPROPERTY(BlueprintReadWrite);
 	ASurvivorCharacter* trappedPlayer;
 	
 
-private:
-	
+public:
+	UPROPERTY(BlueprintReadWrite);
 	float escapeProgress;
+	UPROPERTY(BlueprintReadWrite);
 	bool escaping;
 
 };
