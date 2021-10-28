@@ -7,6 +7,8 @@
 #include "Perception/AIPerceptionTypes.h"
 #include "CreatureAIController.generated.h"
 
+class USoundBase;
+
 UENUM(BlueprintType)
 enum ECreatureState
 {
@@ -73,6 +75,12 @@ protected:
 
 	UFUNCTION()
 	virtual void OnDetectedUpdate(AActor* DetectedActor, uint32 Stage);
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* FoundAIBark;
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* CuriousAIBark;
 
 private:
 

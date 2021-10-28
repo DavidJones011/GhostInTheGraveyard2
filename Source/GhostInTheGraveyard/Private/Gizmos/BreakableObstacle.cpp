@@ -176,7 +176,7 @@ float ABreakableObstacle::TakeDamage(float DamageAmount, struct FDamageEvent con
 
 		if (CameraShake)
 		{
-			UGameplayStatics::PlayWorldCameraShake(GetWorld(), CameraShake, GetActorLocation(), 0.0F, 600.0F, 0.5F);
+			UGameplayStatics::PlayWorldCameraShake(GetWorld(), CameraShake, GetActorLocation(), 0.0F, 1500.0F, 0.5F);
 		}
 
 		if (FMath::IsNearlyZero(Health))
