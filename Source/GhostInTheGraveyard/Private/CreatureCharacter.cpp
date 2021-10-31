@@ -45,9 +45,6 @@ bool ACreatureCharacter::CheckForActorInFront(float Distance, FHitResult& OutRes
 		, GetCapsuleComponent()->GetCollisionShape()
 		, FCollisionQueryParams("", true, this));
 
-// 	const bool bHit = GetWorld()->LineTraceSingleByChannel(OutResult, GetActorLocation(), TargetLocation
-// 		, DefaultSightCollisionChannel
-// 		, FCollisionQueryParams("", true, this));
 	return bHit;
 }
 
