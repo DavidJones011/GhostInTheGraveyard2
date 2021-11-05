@@ -16,6 +16,7 @@
 #include "CreatureCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
+#include "Gizmos/BreakableObstacle.h"
 
 ACreatureAIController::ACreatureAIController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -83,6 +84,11 @@ void ACreatureAIController::Tick(float DeltaTime)
 				if (Result.GetActor()->ActorHasTag(FAITags::BreakableTag))
 				{
 					BlackboardComponent->SetValueAsObject(FBBKeys::FoundBreakable, Result.GetActor());
+					ABreakableObstacle* Obstacle = Cast<ABreakableObstacle>(Result.GetActor());
+					if(Obstacle && !Obstacle->IsBroken())
+					{
+						GetDetectorComponent()->PauseAwareDetections();
+					}
 				}
 			}
 		}

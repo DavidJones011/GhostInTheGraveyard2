@@ -26,15 +26,14 @@ void FGameplayDebuggerCategory_Creature::CollectData(APlayerController* OwnerPC,
 	if(Character == NULL)
 		return;
 
+	Data.DetectedData.Empty();
 	ACreatureAIController* CreatureController = Cast<ACreatureAIController>(Character->GetController());
 	if (CreatureController)
 	{
 		UDetectorComponent* DetectorComponent = CreatureController->GetDetectorComponent();
 		if (DetectorComponent)
 		{
-			TArray<FDetectionResult> DetectionResults;
-			DetectorComponent->GetDetectedArray(DetectionResults, EDetectionStage::Unaware);
-			Data.DetectedData = DetectionResults;
+			DetectorComponent->GetDetectedArray(Data.DetectedData);
 		}
 	}
 }

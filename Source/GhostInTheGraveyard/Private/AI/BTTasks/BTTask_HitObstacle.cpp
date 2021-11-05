@@ -7,6 +7,7 @@
 #include "CreatureCharacter.h"
 #include "CreatureAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Components/DetectorComponent.h"
 
 UBTTask_HitObstacle::UBTTask_HitObstacle(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -31,6 +32,7 @@ EBTNodeResult::Type UBTTask_HitObstacle::ExecuteTask(UBehaviorTreeComponent& Own
 				if (Obstacle->IsBroken())
 				{
 					BlackboardComp->ClearValue(BlackboardKey.SelectedKeyName);
+					CreatureController->GetDetectorComponent()->ResumeAwareDetections();
 				}
 
 				return EBTNodeResult::Succeeded;

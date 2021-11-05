@@ -99,7 +99,19 @@ public:
 	 * Returns the array of data of all actors that are considered detected.
 	 * Stage param allows to filter the results.
 	 */
-	void GetDetectedArray(TArray<FDetectionResult>& OutResults, EDetectionStage Stage);
+	void GetDetectedArray(TArray<FDetectionResult>& OutData);
+	
+	/**
+	 * Pause any detections that are considered aware.
+	 */
+	UFUNCTION(BlueprintCallable)
+	void PauseAwareDetections();
+
+	/**
+	 * Resume any detections that are considered aware.
+	 */
+	UFUNCTION(BlueprintCallable)
+	void ResumeAwareDetections();
 
 	/**
 	 * Delegate that is broadcasted when the detecting stage of an actor has changed.
@@ -121,6 +133,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = Detection)
 	float LooseTargetDelay = 1.0F;
+
+	UPROPERTY()
+	bool bPauseAwareDetect = false;
 
 private:
 

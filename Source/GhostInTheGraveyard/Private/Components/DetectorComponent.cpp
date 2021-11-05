@@ -52,6 +52,10 @@ void UDetectorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	{
 		FDetectionData& Data = DetectionMap[Actor];
 
+		// skip update for aware detections if paused
+		if(Data.Stage == EDetectionStage::Aware && bPauseAwareDetect)
+			continue;
+
 		if (Data.Status == EDetectionStatus::PendingRemoval)
 		{
 			// mark for removal
@@ -141,11 +145,10 @@ void UDetectorComponent::InstantlyDetectActor(class AActor* DetectedActor)
 	if (Data != NULL)
 	{
 		Data->Time = TimeNeededToBeAware + LooseTargetDelay;
-		Data->Visibility = 0.0F;
 	}
 }
 
-void UDetectorComponent::GetDetectedArray(TArray<FDetectionResult>& OutResults, EDetectionStage Stage)
+void UDetectorComponent::GetDetectedArray(TArray<FDetectionResult>& OutData)
 {
 	for (AActor* Actor : ActiveDetectionSet)
 	{
@@ -154,14 +157,21 @@ void UDetectorComponent::GetDetectedArray(TArray<FDetectionResult>& OutResults, 
 		{
 			continue;
 		}
-
-		if ((uint32)Data.Stage >= (uint32)Stage)
-		{
-			FDetectionResult Result;
-			Result.Actor = Actor;
-			Result.Stage = Data.Stage;
-			OutResults.Push(Result);
-		}
+		FDetectionResult Result;
+		Result.Value = FMath::Clamp<float>(Data.Time / TimeNeededToBeAware, 0.0F, 1.0F);
+		Result.Stage = Data.Stage;
+		Result.Actor = Actor;
+		OutData.Push(Result);
 	}
+}
+
+void UDetectorComponent::PauseAwareDetections()
+{
+	bPauseAwareDetect = true;
+}
+
+void UDetectorComponent::ResumeAwareDetections()
+{
+	bPauseAwareDetect = false;
 }
 
