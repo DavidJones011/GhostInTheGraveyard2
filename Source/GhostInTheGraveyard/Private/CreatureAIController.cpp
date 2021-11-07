@@ -14,6 +14,7 @@
 #include "EnvironmentQuery/EnvQuery.h"
 #include "AI/AIDirectorSubsystem.h"
 #include "CreatureCharacter.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
 
 ACreatureAIController::ACreatureAIController(const FObjectInitializer& ObjectInitializer)
@@ -103,6 +104,9 @@ void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage
 				GetBlackboardComponent()->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Pursue);
 				GetBlackboardComponent()->SetValueAsObject(FBBKeys::TargetActor, DetectedActor);
 				GetBlackboardComponent()->ClearValue(FBBKeys::TargetLocation);
+
+				if (CuriousAIBark && GetCharacter()) UGameplayStatics::PlaySoundAtLocation(GetWorld(), FoundAIBark, GetCharacter()->GetActorLocation());
+
 				//GetBlackboardComponent()->ClearValue(FBBKeys::InvestigateState);
 			}
 		}
@@ -114,9 +118,12 @@ void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage
 				//GetBlackboardComponent()->SetValueAsBool(FBBKeys::ActiveState, ECreatureState::ST_Search);
 				GetBlackboardComponent()->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Patrol);
 
+
 				GetBlackboardComponent()->ClearValue(FBBKeys::TargetActor);
 				GetBlackboardComponent()->SetValueAsVector(FBBKeys::TargetLocation, DetectedActor->GetActorLocation());
-				BlackboardComponent->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Investigate);
+				//BlackboardComponent->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Investigate);
+
+				if (CuriousAIBark && GetCharacter()) UGameplayStatics::PlaySoundAtLocation(GetWorld(), CuriousAIBark, GetCharacter()->GetActorLocation());
 			}
 		}
 	}

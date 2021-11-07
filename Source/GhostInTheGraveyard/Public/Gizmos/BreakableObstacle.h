@@ -10,6 +10,7 @@ class USceneComponent;
 class UStaticMeshComponent;
 class UFixNavModifierComponent;
 class UBoxComponent;
+class USoundBase;
 
 UCLASS()
 class GHOSTINTHEGRAVEYARD_API ABreakableObstacle : public AActor
@@ -49,6 +50,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	TSubclassOf<UCameraShakeBase> CameraShake;
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* HitSound;
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* BreakSound;
 
 
 public:	
