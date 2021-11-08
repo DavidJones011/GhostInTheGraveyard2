@@ -17,6 +17,7 @@
 #include "CollisionQueryParams.h"
 #include "AI/AIDirectorSubsystem.h"
 #include "HidingSpot.h"
+#include "Perception/AISense_Hearing.h"
 
 
 
