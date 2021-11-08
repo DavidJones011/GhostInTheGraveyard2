@@ -121,25 +121,31 @@ void ASurvivorCharacter::OnResetVR()
 }
 
 void ASurvivorCharacter::Tick(float DeltaSeconds) {
-	FHitResult hit;
-	FVector end = this->GetActorLocation() + this->GetActorForwardVector() * 500;
-	FCollisionObjectQueryParams params = FCollisionObjectQueryParams(ECollisionChannel::ECC_WorldDynamic);
 
-	GetWorld()->LineTraceSingleByObjectType(hit, this->GetActorLocation(), end, params);
 
-	if (hit.IsValidBlockingHit()) {
-		IInteractable* interact = Cast<IInteractable>(hit.Actor);
-		if (interact && interact->CanInteract(this)) {
-			CanInteract = true;
-			currentInteract = interact;
-			if (GEngine)
-				GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("CanInteract"));
-		} else {
-			CanInteract = false;
-			currentInteract = 0;
+	if (!Hidden && !Trapped) {
+		FHitResult hit;
+		FVector end = this->GetActorLocation() + this->GetActorForwardVector() * 500;
+		FCollisionObjectQueryParams params = FCollisionObjectQueryParams(ECollisionChannel::ECC_WorldDynamic);
+
+		GetWorld()->LineTraceSingleByObjectType(hit, this->GetActorLocation(), end, params);
+
+		if (hit.IsValidBlockingHit()) {
+			IInteractable* interact = Cast<IInteractable>(hit.Actor);
+			if (interact && interact->CanInteract(this)) {
+				CanInteract = true;
+				currentInteract = interact;
+				if (GEngine)
+					GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("CanInteract"));
+			}
+			else {
+				CanInteract = false;
+				currentInteract = 0;
+			}
+
 		}
-
 	}
+	
 }
 
 
@@ -221,6 +227,8 @@ bool ASurvivorCharacter::Trap(ATrap* trap) {
 		GetController()->SetIgnoreMoveInput(true);
 		currentInteract = (IInteractable*) trap;
 		Trapped = true;
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 1.0, this, 0.0f);
+
 		return true;
 	}
 	else {
