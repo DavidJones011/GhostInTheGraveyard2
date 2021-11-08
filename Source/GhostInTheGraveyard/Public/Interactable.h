@@ -10,7 +10,7 @@
 #include "Interactable.generated.h"
 
 // This class does not need to be modified.
-UINTERFACE(MinimalAPI, Blueprintable)
+UINTERFACE(MinimalAPI, Blueprintable, meta = (CannotImplementInterfaceInBlueprint))
 class UInteractable : public UInterface
 {
 	GENERATED_BODY()
@@ -25,8 +25,11 @@ class GHOSTINTHEGRAVEYARD_API IInteractable
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
+	UFUNCTION(BlueprintCallable)
 	virtual void Interact(ASurvivorCharacter* player) {};
+	UFUNCTION(BlueprintCallable)
 	virtual void EndInteract(ASurvivorCharacter* player) {};
+	UFUNCTION(BlueprintCallable)
 	virtual bool CanInteract(ASurvivorCharacter* player) { return true; }
 
 };

@@ -15,8 +15,8 @@ UCLASS()
 class GHOSTINTHEGRAVEYARD_API ATrap : public AActor, public IInteractable
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	ATrap();
 
@@ -29,21 +29,32 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components");
 	class UBoxComponent* collider;
 
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	virtual void Interact(ASurvivorCharacter* player);
-	virtual void EndInteract(ASurvivorCharacter* player);
-	virtual bool CanInteract(ASurvivorCharacter* player);
-	
 
-private:
+public:
+	UFUNCTION(BlueprintCallable)
+	virtual void Interact(ASurvivorCharacter* player);
+	UFUNCTION(BlueprintCallable)
+	virtual void EndInteract(ASurvivorCharacter* player);
+	UFUNCTION(BlueprintCallable)
+	virtual bool CanInteract(ASurvivorCharacter* player);
+	UPROPERTY(BlueprintReadWrite);
 	ASurvivorCharacter* trappedPlayer;
+
+
+public:
+	UPROPERTY(BlueprintReadWrite);
 	float escapeProgress;
+	UPROPERTY(BlueprintReadWrite);
 	bool escaping;
+
+	bool disabled;
+
+	void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 };

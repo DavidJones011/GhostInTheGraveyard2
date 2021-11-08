@@ -16,6 +16,8 @@
 #include "XRMotionControllerBase.h"
 #include "CollisionQueryParams.h"
 #include "AI/AIDirectorSubsystem.h"
+#include "HidingSpot.h"
+#include "Perception/AISense_Hearing.h"
 
 
 
@@ -38,8 +40,6 @@ ASurvivorCharacter::ASurvivorCharacter(const FObjectInitializer& ObjectInitializ
 	// Create a CameraComponent
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
-	FirstPersonCameraComponent->SetRelativeLocation(FVector(-39.56f, 1.75f, 64.f)); // Position the camera
-
 }
 
 //TODO: Implemented this way for now, but should change in the future to fit the games design
@@ -57,8 +57,16 @@ bool ASurvivorCharacter::CanBeSeenFrom(const FVector& ObserverLocation, FVector&
 	NumberOfLoSChecksPerformed = 1;
 	if (bHit && HitResult.Actor == this)
 	{
-		OutSightStrength = 1.0F;
-		bSuccess = true;
+		if (Hidden) {
+			OutSightStrength = 0.0f;
+			bSuccess = true;
+		}
+		else {
+			OutSightStrength = 1.0F;
+			bSuccess = true;
+		}
+
+
 	}
 
 	return bSuccess;
@@ -77,21 +85,6 @@ void ASurvivorCharacter::BeginPlay()
 	}
 }
 
-void ASurvivorCharacter::Tick(float DeltaSeconds)
-{
-	ECollisionChannel DefaultSightCollisionChannel = ECollisionChannel::ECC_WorldDynamic;
-	FHitResult HitResult;
-	const bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, GetActorLocation(), GetActorForwardVector()+GetActorLocation()
-		, DefaultSightCollisionChannel
-		, FCollisionQueryParams("", true));
-
-	IInteractable* interact = Cast<IInteractable>(HitResult.Actor);
-	if (bHit && interact && interact->CanInteract(this))
-	{
-		interact->Interact(this);
-	}
-}
-
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -101,10 +94,13 @@ void ASurvivorCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	check(PlayerInputComponent);
 
 	// Bind jump events
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASurvivorCharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ASurvivorCharacter::OnResetVR);
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASurvivorCharacter::Interact);
+	PlayerInputComponent->BindAction("Interact", IE_Released, this, &ASurvivorCharacter::EndInteract);
+
 
 	// Bind movement events
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASurvivorCharacter::MoveForward);
@@ -124,7 +120,33 @@ void ASurvivorCharacter::OnResetVR()
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
 
+void ASurvivorCharacter::Tick(float DeltaSeconds) {
 
+
+	if (!Hidden && !Trapped) {
+		FHitResult hit;
+		FVector end = this->GetActorLocation() + this->GetActorForwardVector() * 500;
+		FCollisionObjectQueryParams params = FCollisionObjectQueryParams(ECollisionChannel::ECC_WorldDynamic);
+
+		GetWorld()->LineTraceSingleByObjectType(hit, this->GetActorLocation(), end, params);
+
+		if (hit.IsValidBlockingHit()) {
+			IInteractable* interact = Cast<IInteractable>(hit.Actor);
+			if (interact && interact->CanInteract(this)) {
+				CanInteract = true;
+				currentInteract = interact;
+				if (GEngine)
+					GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("CanInteract"));
+			}
+			else {
+				CanInteract = false;
+				currentInteract = 0;
+			}
+
+		}
+	}
+	
+}
 
 
 void ASurvivorCharacter::MoveForward(float Value)
@@ -133,6 +155,7 @@ void ASurvivorCharacter::MoveForward(float Value)
 	{
 		// add movement in that direction
 		AddMovementInput(GetActorForwardVector(), Value);
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 0.5, this, 200.0f);
 	}
 }
 
@@ -142,6 +165,7 @@ void ASurvivorCharacter::MoveRight(float Value)
 	{
 		// add movement in that direction
 		AddMovementInput(GetActorRightVector(), Value);
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 0.5, this, 100.0f);
 	}
 }
 
@@ -155,4 +179,79 @@ void ASurvivorCharacter::LookUpAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+}
+
+void ASurvivorCharacter::Interact()
+{
+	if (currentInteract) {
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Interacting"));
+		currentInteract->Interact(this);
+	}
+
+}
+
+void ASurvivorCharacter::EndInteract()
+{
+	if (currentInteract) {
+		currentInteract->EndInteract(this);
+	}
+}
+
+
+bool ASurvivorCharacter::Hide(AHidingSpot* spot)
+{
+	if (!Hidden) {
+		Hidden = true;
+		GetController()->SetIgnoreMoveInput(true);
+		GetController()->StopMovement();
+		SetActorLocation(spot->hidingPoint->GetComponentLocation());
+		FirstPersonCameraComponent->SetRelativeLocation(cameraHidePosition);
+
+		return true;
+	} else {
+		return false;
+	}
+
+
+}
+void ASurvivorCharacter::Leave(AHidingSpot* spot) {
+	if (Hidden) {
+		Hidden = false;
+		GetController()->SetIgnoreMoveInput(false);
+		SetActorLocation(spot->outPoint->GetComponentLocation());
+		FirstPersonCameraComponent->SetRelativeLocation(cameraNormalPosition);
+	}
+}
+
+bool ASurvivorCharacter::Trap(ATrap* trap) {
+	if (!Trapped) {
+		GetController()->SetIgnoreMoveInput(true);
+		currentInteract = (IInteractable*) trap;
+		Trapped = true;
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 1.0, this, 0.0f);
+
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+void ASurvivorCharacter::EscapeTrap(ATrap* trap) {
+	if (Trapped) {
+		GetController()->SetIgnoreMoveInput(false);
+		currentInteract = 0;
+		Trapped = false;
+	}
+}
+
+void ASurvivorCharacter::Jump() {
+	if (!Hidden && !Trapped) {
+		Super::Jump();
+	}
+}
+
+void ASurvivorCharacter::Kill() {
+	GetController()->SetIgnoreMoveInput(true);
 }
