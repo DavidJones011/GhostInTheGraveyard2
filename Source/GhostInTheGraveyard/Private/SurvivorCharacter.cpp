@@ -120,7 +120,27 @@ void ASurvivorCharacter::OnResetVR()
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
 
+void ASurvivorCharacter::Tick(float DeltaSeconds) {
+	FHitResult hit;
+	FVector end = this->GetActorLocation() + this->GetActorForwardVector() * 500;
+	FCollisionObjectQueryParams params = FCollisionObjectQueryParams(ECollisionChannel::ECC_WorldDynamic);
 
+	GetWorld()->LineTraceSingleByObjectType(hit, this->GetActorLocation(), end, params);
+
+	if (hit.IsValidBlockingHit()) {
+		IInteractable* interact = Cast<IInteractable>(hit.Actor);
+		if (interact && interact->CanInteract(this)) {
+			CanInteract = true;
+			currentInteract = interact;
+			if (GEngine)
+				GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("CanInteract"));
+		} else {
+			CanInteract = false;
+			currentInteract = 0;
+		}
+
+	}
+}
 
 
 void ASurvivorCharacter::MoveForward(float Value)
@@ -155,16 +175,18 @@ void ASurvivorCharacter::LookUpAtRate(float Rate)
 
 void ASurvivorCharacter::Interact()
 {
-	if (currentInteractable) {
-		currentInteractable->Interact(this);
+	if (currentInteract) {
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Interacting"));
+		currentInteract->Interact(this);
 	}
 
 }
 
 void ASurvivorCharacter::EndInteract()
 {
-	if (currentInteractable) {
-		currentInteractable->EndInteract(this);
+	if (currentInteract) {
+		currentInteract->EndInteract(this);
 	}
 }
 
@@ -197,7 +219,7 @@ void ASurvivorCharacter::Leave(AHidingSpot* spot) {
 bool ASurvivorCharacter::Trap(ATrap* trap) {
 	if (!Trapped) {
 		GetController()->SetIgnoreMoveInput(true);
-		currentInteractable = (IInteractable*) trap;
+		currentInteract = (IInteractable*) trap;
 		Trapped = true;
 		return true;
 	}
@@ -209,7 +231,7 @@ bool ASurvivorCharacter::Trap(ATrap* trap) {
 void ASurvivorCharacter::EscapeTrap(ATrap* trap) {
 	if (Trapped) {
 		GetController()->SetIgnoreMoveInput(false);
-		currentInteractable = 0;
+		currentInteract = 0;
 		Trapped = false;
 	}
 }
