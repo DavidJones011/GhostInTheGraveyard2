@@ -118,5 +118,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Interacts")
 		bool Trap(ATrap* trap);
 
-	
+	UFUNCTION(BlueprintCallable, Category = "Death")
+		void Kill();
 };

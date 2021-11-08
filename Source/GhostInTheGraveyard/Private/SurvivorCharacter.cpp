@@ -155,6 +155,7 @@ void ASurvivorCharacter::MoveForward(float Value)
 	{
 		// add movement in that direction
 		AddMovementInput(GetActorForwardVector(), Value);
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 0.5, this, 200.0f);
 	}
 }
 
@@ -164,6 +165,7 @@ void ASurvivorCharacter::MoveRight(float Value)
 	{
 		// add movement in that direction
 		AddMovementInput(GetActorRightVector(), Value);
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 0.5, this, 100.0f);
 	}
 }
 
@@ -248,4 +250,8 @@ void ASurvivorCharacter::Jump() {
 	if (!Hidden && !Trapped) {
 		Super::Jump();
 	}
+}
+
+void ASurvivorCharacter::Kill() {
+	GetController()->SetIgnoreMoveInput(true);
 }
