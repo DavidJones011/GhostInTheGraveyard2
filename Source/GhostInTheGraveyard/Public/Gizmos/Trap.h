@@ -53,4 +53,6 @@ public:
 	UPROPERTY(BlueprintReadWrite);
 	bool escaping;
 
+	bool disabled;
+
 };

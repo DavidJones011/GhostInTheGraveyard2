@@ -40,7 +40,10 @@ void ATrap::Tick(float DeltaTime)
 		escapeProgress += DeltaTime;
 		if (escapeProgress >= 5.0) {
 			trappedPlayer->EscapeTrap(this);
-			Destroy();
+			disabled = true;
+			SetActorHiddenInGame(true);
+			SetActorEnableCollision(false);
+			SetActorTickEnabled(false);
 		}
 	}
 
@@ -54,7 +57,10 @@ void ATrap::Interact(ASurvivorCharacter* player) {
 	}
 }
 void ATrap::EndInteract(ASurvivorCharacter* player) {
-	if (trappedPlayer == player) {
+	if (disabled) {
+		Destroy();
+	}
+	else if (trappedPlayer == player) {
 		if (GEngine)
 			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Don't give up"));
 		escaping = false;
