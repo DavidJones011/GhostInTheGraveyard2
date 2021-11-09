@@ -96,6 +96,12 @@ public:
 	void InstantlyDetectActor(class AActor* DetectedActor);
 
 	/**
+	 * Sets the actor to not be detected instantaneously
+	 */
+	UFUNCTION(BlueprintCallable)
+	void InstantlyLooseActor(class AActor* DetectedActor);
+
+	/**
 	 * Returns the array of data of all actors that are considered detected.
 	 * Stage param allows to filter the results.
 	 */

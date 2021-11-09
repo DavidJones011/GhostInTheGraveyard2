@@ -139,12 +139,22 @@ void UDetectorComponent::InstantlyDetectActor(class AActor* DetectedActor)
 	if (DetectedActor == nullptr)
 		return;
 
-	SetDetectedActor(DetectedActor, 1.0F);
+	SetDetectedActor(DetectedActor, 0.0F);
 
 	FDetectionData* Data = DetectionMap.Find(DetectedActor);
 	if (Data != NULL)
 	{
 		Data->Time = TimeNeededToBeAware + LooseTargetDelay;
+	}
+}
+
+void UDetectorComponent::InstantlyLooseActor(class AActor* DetectedActor)
+{
+	FDetectionData* Data = DetectionMap.Find(DetectedActor);
+	if (Data != NULL)
+	{
+		Data->Time = 0.0;
+		Data->Visibility = 0.0;
 	}
 }
 

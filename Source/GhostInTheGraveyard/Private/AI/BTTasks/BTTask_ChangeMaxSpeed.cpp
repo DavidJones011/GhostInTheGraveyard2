@@ -73,8 +73,7 @@ void UBTTask_ChangeMaxSpeed::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* 
 
 	//check if the task is being run as a child task of a parallel composite node
 	UBTComposite_SimpleParallel* ParallelNode = Cast<UBTComposite_SimpleParallel>(GetParentNode());
-	uint16 MainTaskIndex = ParallelNode->GetChildExecutionIndex(0);
-	if (ParallelNode && GetExecutionIndex() > MainTaskIndex)
+	if (ParallelNode)
 	{
 		return;
 	}
