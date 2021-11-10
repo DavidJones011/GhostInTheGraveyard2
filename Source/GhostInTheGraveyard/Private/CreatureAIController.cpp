@@ -53,7 +53,7 @@ ACreatureAIController::ACreatureAIController(const FObjectInitializer& ObjectIni
 		HearingConfig = CreateDefaultSubobject<UAISenseConfig_Hearing>(TEXT("Hearing Config"));
 		if (HearingConfig)
 		{
-			HearingConfig->HearingRange = 3000.0F;
+			HearingConfig->HearingRange = 6000.0F;
 			HearingConfig->DetectionByAffiliation.bDetectEnemies = true;
 			HearingConfig->DetectionByAffiliation.bDetectFriendlies = true;
 			HearingConfig->DetectionByAffiliation.bDetectNeutrals = true;
@@ -111,7 +111,7 @@ void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage
 				GetBlackboardComponent()->SetValueAsObject(FBBKeys::TargetActor, DetectedActor);
 				GetBlackboardComponent()->ClearValue(FBBKeys::TargetLocation);
 
-				if (CuriousAIBark && GetCharacter()) UGameplayStatics::PlaySoundAtLocation(GetWorld(), FoundAIBark, GetCharacter()->GetActorLocation());
+				if (FoundAIBark && GetCharacter()) UGameplayStatics::PlaySoundAtLocation(GetWorld(), FoundAIBark, GetCharacter()->GetActorLocation());
 
 				//GetBlackboardComponent()->ClearValue(FBBKeys::InvestigateState);
 			}
@@ -268,7 +268,7 @@ void ACreatureAIController::OnPerceptionUpdate(const TArray<AActor*>& UpdatedAct
 void ACreatureAIController::OnTargetPerceptionUpdate(AActor* InActor, const FAIStimulus Stimulus)
 {
 	ACharacter* TargetCharacter = Cast<ACharacter>(InActor);
-	if (TargetCharacter)
+	if (TargetCharacter && Stimulus.Type == SightConfig->GetSenseID())
 	{
 		float Visibility = (Stimulus.WasSuccessfullySensed()) ? Stimulus.Strength : 0.0F;
 		DetectorComponent->SetDetectedActor(InActor, Visibility);
