@@ -230,11 +230,11 @@ bool ASurvivorCharacter::Hide(AHidingSpot* spot)
 }
 void ASurvivorCharacter::Leave(AHidingSpot* spot) {
 	if (Hidden) {
-		Hidden = false;
 		GetController()->SetIgnoreMoveInput(false);
 		SetActorLocation(spot->outPoint->GetComponentLocation());
 		FirstPersonCameraComponent->SetRelativeLocation(cameraNormalPosition);
 		currentInteract = 0;
+		Hidden = false;
 	}
 }
 
