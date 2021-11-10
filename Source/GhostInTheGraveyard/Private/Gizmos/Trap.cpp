@@ -76,5 +76,6 @@ void ATrap::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AAct
 
 	if (player) {
 		player->Trap(this);
+		trappedPlayer = player;
 	}
 }
