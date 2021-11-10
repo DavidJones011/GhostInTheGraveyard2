@@ -20,6 +20,7 @@
 #include "Perception/AISense_Hearing.h"
 #include "Dialogue/DialogueUserWidget.h"
 #include "Components/InventoryComponent.h"
+#include "Gizmos/Trap.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -156,7 +157,7 @@ void ASurvivorCharacter::Tick(float DeltaSeconds) {
 
 		}
 	}
-	
+
 }
 
 
@@ -194,6 +195,7 @@ void ASurvivorCharacter::LookUpAtRate(float Rate)
 
 void ASurvivorCharacter::Interact()
 {
+
 	if (currentInteract) {
 		//if (GEngine)
 			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Interacting"));
@@ -218,7 +220,7 @@ bool ASurvivorCharacter::Hide(AHidingSpot* spot)
 		GetController()->StopMovement();
 		SetActorLocation(spot->hidingPoint->GetComponentLocation());
 		FirstPersonCameraComponent->SetRelativeLocation(cameraHidePosition);
-
+		currentInteract = spot;
 		return true;
 	} else {
 		return false;
@@ -232,13 +234,14 @@ void ASurvivorCharacter::Leave(AHidingSpot* spot) {
 		GetController()->SetIgnoreMoveInput(false);
 		SetActorLocation(spot->outPoint->GetComponentLocation());
 		FirstPersonCameraComponent->SetRelativeLocation(cameraNormalPosition);
+		currentInteract = 0;
 	}
 }
 
 bool ASurvivorCharacter::Trap(ATrap* trap) {
 	if (!Trapped) {
 		GetController()->SetIgnoreMoveInput(true);
-		currentInteract = (IInteractable*) trap;
+		currentInteract = trap;
 		Trapped = true;
 		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 1.0, this, 0.0f);
 
