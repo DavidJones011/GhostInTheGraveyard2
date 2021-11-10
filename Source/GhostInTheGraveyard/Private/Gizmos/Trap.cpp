@@ -16,7 +16,7 @@ ATrap::ATrap()
 	collider = CreateDefaultSubobject<UBoxComponent>(TEXT("Collider"));
 
 	collider->SetupAttachment(pivot);
-	
+
 
 
 	escaping = false;
@@ -74,7 +74,7 @@ bool ATrap::CanInteract(ASurvivorCharacter* player) {
 void ATrap::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Trapped"));
-	
+
 	ASurvivorCharacter* player = Cast<ASurvivorCharacter>(OtherActor);
 
 	if (player) {
