@@ -24,6 +24,9 @@ protected:
 	UPROPERTY(Transient)
 	UDialogueAsset* CurrentDialogueAsset = nullptr;
 
+	UPROPERTY(Transient)
+	bool bConversationRunning = false;
+
 	FTimerHandle DialogueTimerHandle;
 
 public:	
@@ -38,6 +41,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SendInput(FName Input = NAME_None);
+
+	UFUNCTION(BlueprintCallable)
+	bool ConversationIsRunning() const { return bConversationRunning; }
+
+	DECLARE_DELEGATE(FExitConversation);
+	FExitConversation OnExitConversation;
 
 protected:
 

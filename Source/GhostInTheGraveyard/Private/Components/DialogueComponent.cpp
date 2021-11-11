@@ -21,6 +21,7 @@ void UDialogueComponent::StartConversation()
 	CurrentDialogueAsset = nullptr;
 	if (StartingDialogueAsset)
 	{
+		bConversationRunning = true;
 		RunDialogueAsset(StartingDialogueAsset);
 	}
 }
@@ -36,6 +37,13 @@ void UDialogueComponent::RunDialogueAsset(UDialogueAsset* Dialogue)
 			Dialogue->OnDialogueEnter();
 			CurrentDialogueAsset = Dialogue;
 		}
+	}
+	else
+	{
+		// no valid dialogue asset was found, exit the conversation
+		if (CurrentDialogueAsset) CurrentDialogueAsset->OnDialogueExit();
+		ExitConversation();
+		return;
 	}
 
 	// run the dialogue asset
@@ -62,11 +70,6 @@ void UDialogueComponent::RunDialogueAsset(UDialogueAsset* Dialogue)
 			// no timer, awaits input for continuing
 		}
 	}
-	else
-	{
-		// no valid dialogue asset was found, exit the conversation
-		ExitConversation();
-	}
 }
 
 void UDialogueComponent::ExitConversation()
@@ -89,6 +92,9 @@ void UDialogueComponent::ExitConversation()
 
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 1.0F, FColor::Red, FString("Conversation Ended!"));
+
+	bConversationRunning = false;
+	OnExitConversation.ExecuteIfBound();
 }
 
 void UDialogueComponent::SendInput(FName Input /*= NAME_None*/)
@@ -112,8 +118,6 @@ void UDialogueComponent::SendInput(FName Input /*= NAME_None*/)
 void UDialogueComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	if(StartingDialogueAsset)
-		StartConversation();
 }
 
 void UDialogueComponent::DialogueTimerCallback()
