@@ -84,7 +84,7 @@ void ASurvivorCharacter::BeginPlay()
 		Director->RegisterPlayer(this);
 
 		// create the dialogue widget
-		if (IsPlayerControlled())
+		if (IsPlayerControlled() && DialogueWidgetClass)
 		{
 			DialogueWidget = Cast<UDialogueUserWidget>(CreateWidget(Cast<APlayerController>(GetController()), DialogueWidgetClass));
 			DialogueWidget->AddToViewport();
