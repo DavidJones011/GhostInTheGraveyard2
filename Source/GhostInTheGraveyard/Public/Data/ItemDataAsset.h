@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Engine/DataTable.h"
 #include "ItemDataAsset.generated.h"
 
 /**
  * The base data asset used to store item information.
  */
 USTRUCT(Blueprintable)
-struct GHOSTINTHEGRAVEYARD_API FItemDataAsset
+struct GHOSTINTHEGRAVEYARD_API FItemDataAsset : public FTableRowBase
 {
 	GENERATED_USTRUCT_BODY()
 
