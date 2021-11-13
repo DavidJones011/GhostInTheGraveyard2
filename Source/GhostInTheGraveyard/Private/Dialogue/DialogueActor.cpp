@@ -21,9 +21,9 @@ void ADialogueActor::BeginPlay()
 	
 }
 
-void ADialogueActor::ExitedConversation()
+void ADialogueActor::ExitedConversation(ASurvivorCharacter* CharacterInstigator)
 {
-	// something
+	CharacterInstigator->SetInteractingDialogueActor(nullptr);
 }
 
 // Called every frame
@@ -40,11 +40,12 @@ void ADialogueActor::Interact(ASurvivorCharacter* player)
 
 	if (DialogueComponent->ConversationIsRunning())
 	{
-		DialogueComponent->SendInput("Yes");
+		DialogueComponent->SendInput("Skip");
 	}
 	else
 	{
-		DialogueComponent->StartConversation();
+		player->SetInteractingDialogueActor(this);
+		DialogueComponent->StartConversation(player);
 	}
 }
 

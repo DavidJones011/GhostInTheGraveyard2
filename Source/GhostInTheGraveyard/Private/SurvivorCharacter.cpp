@@ -18,8 +18,7 @@
 #include "AI/AIDirectorSubsystem.h"
 #include "HidingSpot.h"
 #include "Perception/AISense_Hearing.h"
-
-
+#include "Dialogue/DialogueUserWidget.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -80,8 +79,17 @@ void ASurvivorCharacter::BeginPlay()
 	UWorld* World = GetWorld();
 	if (World)
 	{
+		// register to AI director
 		UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
 		Director->RegisterPlayer(this);
+
+		// create the dialogue widget
+		if (IsPlayerControlled())
+		{
+			DialogueWidget = Cast<UDialogueUserWidget>(CreateWidget(Cast<APlayerController>(GetController()), DialogueWidgetClass));
+			DialogueWidget->AddToViewport();
+			DialogueWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 }
 
@@ -135,8 +143,8 @@ void ASurvivorCharacter::Tick(float DeltaSeconds) {
 			if (interact && interact->CanInteract(this)) {
 				CanInteract = true;
 				currentInteract = interact;
-				if (GEngine)
-					GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("CanInteract"));
+				//if (GEngine)
+					//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("CanInteract"));
 			}
 			else {
 				CanInteract = false;
@@ -184,8 +192,8 @@ void ASurvivorCharacter::LookUpAtRate(float Rate)
 void ASurvivorCharacter::Interact()
 {
 	if (currentInteract) {
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Interacting"));
+		//if (GEngine)
+			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Interacting"));
 		currentInteract->Interact(this);
 	}
 

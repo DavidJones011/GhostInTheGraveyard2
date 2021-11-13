@@ -28,7 +28,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
-	void ExitedConversation();
+	void ExitedConversation(ASurvivorCharacter* CharacterInstigator);
 
 public:	
 	// Called every frame

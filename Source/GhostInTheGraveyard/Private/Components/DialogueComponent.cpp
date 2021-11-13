@@ -4,6 +4,8 @@
 #include "Components/DialogueComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Dialogue/DialogueAsset.h"
+#include "SurvivorCharacter.h"
+#include "Dialogue/DialogueUserWidget.h"
 
 // Sets default values for this component's properties
 UDialogueComponent::UDialogueComponent()
@@ -13,15 +15,17 @@ UDialogueComponent::UDialogueComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UDialogueComponent::StartConversation()
+void UDialogueComponent::StartConversation(ASurvivorCharacter* Instigator)
 {
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 1.0F, FColor::Red, FString("Conversation Started!"));
+	if(Instigator == nullptr || Instigator->GetDialogueWidget() == nullptr)
+		return;
 
 	CurrentDialogueAsset = nullptr;
 	if (StartingDialogueAsset)
 	{
+		InstigatingCharacter = Instigator;
 		bConversationRunning = true;
+		InstigatingCharacter->GetDialogueWidget()->BeginDialogue();
 		RunDialogueAsset(StartingDialogueAsset);
 	}
 }
@@ -52,9 +56,11 @@ void UDialogueComponent::RunDialogueAsset(UDialogueAsset* Dialogue)
 		USoundBase* DialogueSound = CurrentDialogueAsset->GetSound();
 		float DialogueDuration = CurrentDialogueAsset->GetTimeDuration();
 		FText DialogueText = CurrentDialogueAsset->GetDialogueText();
+		FName WidgetName = CurrentDialogueAsset->GetWidgetName();
 
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 5.0F, FColor::Cyan, DialogueText.ToString());
+		ensure(InstigatingCharacter && InstigatingCharacter->GetDialogueWidget());
+		InstigatingCharacter->GetDialogueWidget()->SetDialogueWidget(WidgetName);
+		InstigatingCharacter->GetDialogueWidget()->SetDialogueText(DialogueText);
 
 		if (DialogueDuration >= 0.0)
 		{
@@ -90,11 +96,10 @@ void UDialogueComponent::ExitConversation()
 		}
 	}
 
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 1.0F, FColor::Red, FString("Conversation Ended!"));
-
 	bConversationRunning = false;
-	OnExitConversation.ExecuteIfBound();
+	OnExitConversation.ExecuteIfBound(InstigatingCharacter);
+	InstigatingCharacter->GetDialogueWidget()->EndDialogue();
+	InstigatingCharacter = false;
 }
 
 void UDialogueComponent::SendInput(FName Input /*= NAME_None*/)

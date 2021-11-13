@@ -7,6 +7,7 @@
 #include "DialogueComponent.generated.h"
 
 class UDialogueAsset;
+class ASurvivorCharacter;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class GHOSTINTHEGRAVEYARD_API UDialogueComponent : public UActorComponent
@@ -29,12 +30,15 @@ protected:
 
 	FTimerHandle DialogueTimerHandle;
 
+	UPROPERTY(Transient)
+	ASurvivorCharacter* InstigatingCharacter = nullptr;
+
 public:	
 	// Sets default values for this component's properties
 	UDialogueComponent();
 
 	UFUNCTION(BlueprintCallable)
-	void StartConversation();
+	void StartConversation(ASurvivorCharacter* Instigator);
 
 	UFUNCTION()
 	void ExitConversation();
@@ -45,7 +49,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool ConversationIsRunning() const { return bConversationRunning; }
 
-	DECLARE_DELEGATE(FExitConversation);
+	DECLARE_DELEGATE_OneParam(FExitConversation, ASurvivorCharacter*);
 	FExitConversation OnExitConversation;
 
 protected:

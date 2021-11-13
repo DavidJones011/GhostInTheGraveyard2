@@ -1,18 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-
-
-
-
 #include "GhostInTheGraveyardCharacter.h"
 #include "Perception/AISightTargetInterface.h"
-
 #include "SurvivorCharacter.generated.h"
 
 class IInteractable;
 class AHidingSpot;
 class ATrap;
+class UDialogueUserWidget;
+class ADialogueActor;
 
 UCLASS(config = Game)
 class GHOSTINTHEGRAVEYARD_API ASurvivorCharacter : public AGhostInTheGraveyardCharacter, public IAISightTargetInterface
@@ -23,41 +20,46 @@ public:
 
 	ASurvivorCharacter(const FObjectInitializer& ObjectInitializer);
 
-	
 private:
-
-	/** First person camera */
-	
-
 	
 	const FVector cameraNormalPosition = FVector(0.0f,0.0f,70.0f);
 	const FVector cameraHidePosition = FVector(0.0f, 0.0f, 0.0f);
 	
+	/** First person camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-		UCameraComponent* FirstPersonCameraComponent;
+	UCameraComponent* FirstPersonCameraComponent;
 
+	UPROPERTY(Transient)
+	UDialogueUserWidget* DialogueWidget = nullptr;
+
+	UPROPERTY(Transient)
+	ADialogueActor* InteractingDialogueActor = nullptr;
 
 public:
 	IInteractable* currentInteract;
 
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
-		float BaseTurnRate;
+	float BaseTurnRate;
 
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
-		float BaseLookUpRate;
+	float BaseLookUpRate;
 	
 
 	UPROPERTY(BlueprintReadWrite)
-		bool Hidden;
+	bool Hidden;
 
 	UPROPERTY(BlueprintReadWrite)
-		bool Trapped;
+	bool Trapped;
 
 	UPROPERTY(BlueprintReadWrite)
-		bool CanInteract;
+	bool CanInteract;
 
+protected:
+
+	UPROPERTY(EditAnywhere, Category = "Dialogue")
+	TSubclassOf<UUserWidget> DialogueWidgetClass;
 
 protected:
 
@@ -110,14 +112,24 @@ public:
 
 
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
-		void Interact();
+	void Interact();
 
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
-		void EndInteract();
+	void EndInteract();
 
 	UFUNCTION(BlueprintCallable, Category = "Interacts")
-		bool Trap(ATrap* trap);
+	bool Trap(ATrap* trap);
 
 	UFUNCTION(BlueprintCallable, Category = "Death")
-		void Kill();
+	void Kill();
+
+	UFUNCTION(BlueprintCallable, Category = "Dialogue")
+	UDialogueUserWidget* GetDialogueWidget() const { return DialogueWidget; }
+
+	/* This could return null if there is no dialogue component being used. */
+	UFUNCTION(BlueprintCallable, Category = "Dialogue")
+	FORCEINLINE ADialogueActor* GetInteractingDialogueActor() const { return InteractingDialogueActor; }
+
+	UFUNCTION(BlueprintCallable, Category = "Dialogue")
+	void SetInteractingDialogueActor(ADialogueActor* DialogueActor) { InteractingDialogueActor = DialogueActor; }
 };

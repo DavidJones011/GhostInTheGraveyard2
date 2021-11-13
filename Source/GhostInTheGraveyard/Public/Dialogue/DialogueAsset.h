@@ -9,11 +9,16 @@
 
 class USoundBase;
 
-// UENUM(BlueprintType)
-// enum EDialogueInputResult
+// /**
+//  * Enum that the dialogue component can use to determine how to wait for input.
+//  */
+// UENUM(Blueprintable)
+// enum ERequiredInputType
 // {
-// 	DI_Valid    = 0 UMETA(DisplayName = "Valid"),
-// 	DI_Invalid  = 1 UMETA(DisplayName = "Not Valid")
+// 	RIT_UserInterface,
+// 	RIT_Inventory,
+// 	RIT_CharacterInput,
+// 	RIT_None
 // };
 
 /**
@@ -29,6 +34,9 @@ protected:
 	/* The dialogue that should be returned to when exited early. */
 	UPROPERTY(EditAnywhere)
 	UDialogueAsset* ReturnPointDialogue = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	FName WidgetName = "SimpleSubtitle";
 
 public:
 
@@ -49,6 +57,9 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable)
 	virtual FText GetDialogueText() const { return FText::FromString("Default Dialogue Text"); }
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE FName GetWidgetName() const { return WidgetName; }
 
 	/**
 	 * Gets the returning dialogue asset.
