@@ -30,11 +30,13 @@ public:
 	/**
 	 * Adds the item to the inventory. Returns the number of items that cannot be carried.
 	 */
+	UFUNCTION(BlueprintCallable)
 	int32 AddItem(FName ItemName, int32 Count = 1);
 
 	/**
 	 * Removes the item from the inventory. Returns the actual number of items that were removed.
 	 */
+	UFUNCTION(BlueprintCallable)
 	int32 RemoveItem(FName ItemName, int32 Count = 1);
 
 	/**

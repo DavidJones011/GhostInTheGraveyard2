@@ -10,6 +10,7 @@ class AHidingSpot;
 class ATrap;
 class UDialogueUserWidget;
 class ADialogueActor;
+class UInventoryComponent;
 
 UCLASS(config = Game)
 class GHOSTINTHEGRAVEYARD_API ASurvivorCharacter : public AGhostInTheGraveyardCharacter, public IAISightTargetInterface
@@ -28,6 +29,9 @@ private:
 	/** First person camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FirstPersonCameraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UInventoryComponent* InventoryComponent;
 
 	UPROPERTY(Transient)
 	UDialogueUserWidget* DialogueWidget = nullptr;
@@ -129,6 +133,9 @@ public:
 	/* This could return null if there is no dialogue component being used. */
 	UFUNCTION(BlueprintCallable, Category = "Dialogue")
 	FORCEINLINE ADialogueActor* GetInteractingDialogueActor() const { return InteractingDialogueActor; }
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	FORCEINLINE UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 
 	UFUNCTION(BlueprintCallable, Category = "Dialogue")
 	void SetInteractingDialogueActor(ADialogueActor* DialogueActor) { InteractingDialogueActor = DialogueActor; }

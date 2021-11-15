@@ -4,7 +4,9 @@
 #include "Components/DialogueComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Dialogue/DialogueAsset.h"
+#include "Dialogue/DialogueAsset_Branch.h"
 #include "SurvivorCharacter.h"
+#include "Components/InventoryComponent.h"
 #include "Dialogue/DialogueUserWidget.h"
 
 // Sets default values for this component's properties
@@ -61,6 +63,28 @@ void UDialogueComponent::RunDialogueAsset(UDialogueAsset* Dialogue)
 		ensure(InstigatingCharacter && InstigatingCharacter->GetDialogueWidget());
 		InstigatingCharacter->GetDialogueWidget()->SetDialogueWidget(WidgetName);
 		InstigatingCharacter->GetDialogueWidget()->SetDialogueText(DialogueText);
+
+		// checks for inventory item and sends it as input
+		if (WidgetName == "ItemCheck" && InstigatingCharacter->GetInventoryComponent())
+		{
+			UDialogueAsset_Branch* Branch = Cast<UDialogueAsset_Branch>(CurrentDialogueAsset);
+			if (Branch)
+			{
+				bool bFoundItem = false;
+				for (FName RequiredInput : Branch->GetWantedInputs())
+				{
+					if (InstigatingCharacter->GetInventoryComponent()->RemoveItem(RequiredInput) > 0)
+					{
+						bFoundItem = true;
+						SendInput(RequiredInput);
+						break;
+					}
+				}
+
+				if(!bFoundItem)
+					SendInput();
+			}
+		}
 
 		if (DialogueDuration >= 0.0)
 		{

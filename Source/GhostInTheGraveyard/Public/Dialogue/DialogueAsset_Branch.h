@@ -27,6 +27,10 @@ class GHOSTINTHEGRAVEYARD_API UDialogueAsset_Branch : public UDialogueAsset
 {
 	GENERATED_BODY()
 
+public:
+
+	UDialogueAsset_Branch() { WidgetName = "YesNo"; }
+
 protected:
 
 	UPROPERTY(EditAnywhere)
@@ -51,4 +55,6 @@ public:
 	virtual bool SendInput(FName Input);
 	virtual void OnDialogueEnter() override { BranchToTake = -1; }
 	/* UDialogueAsset interface */
+
+	virtual TArray<FName> GetWantedInputs() const;
 };

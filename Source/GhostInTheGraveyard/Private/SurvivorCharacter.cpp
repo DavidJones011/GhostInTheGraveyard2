@@ -19,6 +19,7 @@
 #include "HidingSpot.h"
 #include "Perception/AISense_Hearing.h"
 #include "Dialogue/DialogueUserWidget.h"
+#include "Components/InventoryComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -39,6 +40,8 @@ ASurvivorCharacter::ASurvivorCharacter(const FObjectInitializer& ObjectInitializ
 	// Create a CameraComponent
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
+
+	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory Component"));
 }
 
 //TODO: Implemented this way for now, but should change in the future to fit the games design

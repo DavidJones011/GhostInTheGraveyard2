@@ -36,7 +36,7 @@ protected:
 	UDialogueAsset* ReturnPointDialogue = nullptr;
 
 	UPROPERTY(EditAnywhere)
-	FName WidgetName = "SimpleSubtitle";
+	FName WidgetName = "Subtitle";
 
 public:
 

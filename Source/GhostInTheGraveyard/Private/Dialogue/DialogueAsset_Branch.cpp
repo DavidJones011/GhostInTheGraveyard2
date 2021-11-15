@@ -26,3 +26,15 @@ bool UDialogueAsset_Branch::SendInput(FName Input)
 
 	return false;
 }
+
+TArray<FName> UDialogueAsset_Branch::GetWantedInputs() const
+{
+	TArray<FName> Inputs;
+
+	for (const FDialogueBranch& Branch : Branches)
+	{
+		Inputs.Push(Branch.NeededInput);
+	}
+
+	return Inputs;
+}
