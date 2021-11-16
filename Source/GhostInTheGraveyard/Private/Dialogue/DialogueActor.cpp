@@ -3,6 +3,7 @@
 
 #include "Dialogue/DialogueActor.h"
 #include "Components/DialogueComponent.h"
+#include "Gameframework/PawnMovementComponent.h"
 
 // Sets default values
 ADialogueActor::ADialogueActor()
@@ -45,6 +46,8 @@ void ADialogueActor::Interact(ASurvivorCharacter* player)
 	else
 	{
 		player->SetInteractingDialogueActor(this);
+		player->GetMovementComponent()->StopMovementImmediately();
+		player->GetMovementComponent()->ConsumeInputVector();
 		DialogueComponent->StartConversation(player);
 	}
 }
