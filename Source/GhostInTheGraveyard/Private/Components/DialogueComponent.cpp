@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Dialogue/DialogueAsset.h"
 #include "Dialogue/DialogueAsset_Branch.h"
+#include "Dialogue/DialogueAsset_Execute.h"
 #include "SurvivorCharacter.h"
 #include "Components/InventoryComponent.h"
 #include "Dialogue/DialogueUserWidget.h"
@@ -83,6 +84,15 @@ void UDialogueComponent::RunDialogueAsset(UDialogueAsset* Dialogue)
 
 				if(!bFoundItem)
 					SendInput();
+			}
+		}
+
+		if (WidgetName == "Execute")
+		{
+			UDialogueAsset_Execute* Execution = Cast<UDialogueAsset_Execute>(CurrentDialogueAsset);
+			if (Execution)
+			{
+				Execution->Execute(GetOwner(), InstigatingCharacter);
 			}
 		}
 
