@@ -44,7 +44,7 @@ void AAIPatrolSwitchTriggerBox::EndOverlap(UPrimitiveComponent* OverlappedCompon
 	if (World)
 	{
 		ACharacter* Character = Cast<ACharacter>(OtherActor);
-		if (Character->IsPlayerControlled())
+		if (Character && Character->IsPlayerControlled())
 		{
 			Switch();
 		}
