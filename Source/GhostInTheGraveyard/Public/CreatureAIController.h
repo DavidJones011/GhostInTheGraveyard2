@@ -27,6 +27,14 @@ class GHOSTINTHEGRAVEYARD_API ACreatureAIController : public AAIController
 {
 	GENERATED_BODY()
 
+private:
+
+	UPROPERTY(Transient)
+	float LastHeardSound = 0.0F;
+
+	UPROPERTY(EditAnywhere)
+	float AIBarkTimeNeeded = 5.0F;
+
 public:
 
 	ACreatureAIController(const FObjectInitializer& ObjectInitializer);
@@ -38,6 +46,9 @@ public:
 
 	// Reports the EQS Query Result
 	virtual void ReportEQSQueryResult(TSharedPtr<struct FEnvQueryResult> Result);
+
+	UFUNCTION(BlueprintCallable)
+	bool CanBeTeleported() const;
 
 	/**
 	 * Send the tracked AI controller to go to the given patrol point.
@@ -81,6 +92,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	USoundBase* CuriousAIBark;
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* HeardAIBark;
 
 private:
 

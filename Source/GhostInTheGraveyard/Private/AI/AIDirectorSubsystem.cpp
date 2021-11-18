@@ -6,6 +6,10 @@
 #include "SurvivorCharacter.h"
 #include "Components/PatrolTrackerComponent.h"
 #include "AI/AIPointContextManager.h"
+#include "Components/DetectorComponent.h"
+#include "Components/DialogueComponent.h"
+#include "Dialogue/DialogueActor.h"
+#include "Runtime/NavigationSystem/Public/NavigationSystem.h"
 
 UAIDirectorSubsystem::UAIDirectorSubsystem()
 : Super()
@@ -14,6 +18,59 @@ UAIDirectorSubsystem::UAIDirectorSubsystem()
 , PatrolManager(nullptr)
 {
 
+}
+
+void UAIDirectorSubsystem::RecordState()
+{
+	if (PlayerCharacter)
+	{
+		LastRecord.PlayerLocation = PlayerCharacter->GetActorLocation();
+		LastRecord.PlayerRotation = PlayerCharacter->GetActorRotation();
+	}
+	else
+	{
+		LastRecord.PlayerLocation = FVector::ZeroVector;
+		LastRecord.PlayerRotation = FRotator::ZeroRotator;
+	}
+
+	if (AIController && AIController->GetCharacter() && AIController->GetPatrolTrackerComponent())
+	{
+		LastRecord.AISection = AIController->GetPatrolTrackerComponent()->GetTrackedPatrolSection();
+		LastRecord.AICharacterLocation = AIController->GetNavAgentLocation();
+	}
+	else
+	{
+		LastRecord.AISection = -1;
+		LastRecord.AICharacterLocation = FVector::ZeroVector;
+	}
+}
+
+void UAIDirectorSubsystem::LoadRecordedState()
+{
+	if (AIController)
+	{
+		SetAIForgetPlayer();
+		ACharacter* AICharacter = AIController->GetCharacter();
+		if (AICharacter) { AICharacter->TeleportTo(LastRecord.AICharacterLocation, FRotator::ZeroRotator); }	
+		PlaceAIAtPatrolPoint(LastRecord.AISection, -1);
+	}
+
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->TeleportTo(LastRecord.PlayerLocation, LastRecord.PlayerRotation);
+		PlayerCharacter->Hidden = false;
+
+		if(PlayerCharacter->GetController())
+			PlayerCharacter->GetController()->SetIgnoreMoveInput(false);
+
+		if (PlayerCharacter->GetInteractingDialogueActor())
+		{
+			if (PlayerCharacter->GetInteractingDialogueActor()->GetDialogueComponent()->ConversationIsRunning())
+			{
+				PlayerCharacter->GetInteractingDialogueActor()->GetDialogueComponent()->ExitConversation();
+			}
+		}
+	}
 }
 
 void UAIDirectorSubsystem::RegisterPlayer(ASurvivorCharacter* Character)
@@ -68,6 +125,17 @@ void UAIDirectorSubsystem::SetAIAwareOfPlayer()
 	if (PlayerCharacter) { SetAIAwareOfActor(PlayerCharacter); }
 }
 
+void UAIDirectorSubsystem::SetAIForgetPlayer()
+{
+	if (PlayerCharacter && AIController) 
+	{
+		if (AIController->GetDetectorComponent())
+		{
+			AIController->GetDetectorComponent()->InstantlyLooseActor(PlayerCharacter);
+		}
+	}
+}
+
 void UAIDirectorSubsystem::SendAIToInvestigateLocation(FVector Location)
 {
 	if (AIController == nullptr && Location != FVector(FLT_MAX))
@@ -114,24 +182,29 @@ void UAIDirectorSubsystem::PlaceAIAtPatrolPoint(int32 Section, int32 Index)
 	if(!AIController)
 		return;
 
-	ACharacter* AICharacter = AIController->GetCharacter();
-
-	if(!AICharacter)
-		return;
-
-	if (PatrolManager)
+	if (AIController->CanBeTeleported())
 	{
-		FPatrolPointData Data;
-		if (Index > -1)
-		{
-			PatrolManager->TryGetPatrolPointData(Index, Section, Data);
-		}
-		else
-		{
-			PatrolManager->TryGetClosestPatrolPointDataFromSection(Section, AICharacter->GetActorLocation(), Data);
-		}
+		ACharacter* AICharacter = AIController->GetCharacter();
 
-		AICharacter->SetActorLocation(Data.Location);
+		if (!AICharacter)
+			return;
+
+		if (PatrolManager)
+		{
+			FPatrolPointData Data;
+			if (Index > -1)
+			{
+				PatrolManager->TryGetPatrolPointData(Index, Section, Data);
+			}
+			else
+			{
+				PatrolManager->TryGetClosestPatrolPointDataFromSection(Section, AICharacter->GetActorLocation(), Data);
+			}
+
+
+			UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
+			AICharacter->SetActorLocation(NavSys->ProjectPointToNavigation(GetWorld(), Data.Location));
+		}
 	}
 }
 

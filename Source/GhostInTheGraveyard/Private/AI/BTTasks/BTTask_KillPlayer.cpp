@@ -4,7 +4,9 @@
 #include "SurvivorCharacter.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Components/DetectorComponent.h"
+#include "AI/AIDirectorSubsystem.h"
 #include "CreatureAIController.h"
+#include "AI/AIStrings.h"
 
 UBTTask_KillPlayer::UBTTask_KillPlayer(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -28,6 +30,18 @@ EBTNodeResult::Type UBTTask_KillPlayer::ExecuteTask(UBehaviorTreeComponent& Owne
 				PlayerCharacter->Kill();
 				CreatureController->GetDetectorComponent()->InstantlyLooseActor(PlayerCharacter);
 				BlackboardComp->ClearValue(BlackboardKey.SelectedKeyName);
+				BlackboardComp->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Patrol);
+				BlackboardComp->SetValueAsBool(FBBKeys::PlayerSeen, false);
+				
+				if (GetWorld())
+				{
+					UAIDirectorSubsystem* Subsystem = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+					if (Subsystem)
+					{
+						Subsystem->LoadRecordedState();
+					}
+				}
+
 				return EBTNodeResult::Succeeded;
 			}
 		}

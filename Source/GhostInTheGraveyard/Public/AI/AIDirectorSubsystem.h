@@ -11,6 +11,24 @@ class ASurvivorCharacter;
 class ACreatureAIController;
 class AAIPointContextManager;
 
+USTRUCT(Blueprintable)
+struct FRecordAIState
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FVector PlayerLocation;
+	
+	UPROPERTY()
+	FRotator PlayerRotation;
+
+	UPROPERTY()
+	int32 AISection;
+
+	UPROPERTY()
+	FVector AICharacterLocation;
+};
+
 /**
  * 
  */
@@ -22,6 +40,12 @@ class GHOSTINTHEGRAVEYARD_API UAIDirectorSubsystem : public UWorldSubsystem
 public:
 
 	UAIDirectorSubsystem();
+
+	UFUNCTION(BlueprintCallable)
+	void RecordState();
+
+	UFUNCTION(BlueprintCallable)
+	void LoadRecordedState();
 
 	/*
 	* Register the player for the AI director to track.
@@ -71,8 +95,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetAIAwareOfActor(AActor* DetectedActor);
 
+	/* Sets the AI to be aware of the player instantly */
 	UFUNCTION(BlueprintCallable)
 	void SetAIAwareOfPlayer();
+
+	/* Have the AI forget the player. */
+	UFUNCTION(BlueprintCallable)
+	void SetAIForgetPlayer();
 
 	/*
 	* Has the AI investigate the location right away.
@@ -91,6 +120,7 @@ public:
 
 	/*
 	* Teleports the AI to the specific patrol section and index.
+	* If the index = -1, then it teleports the AI to the nearest index of that section.
 	*/
 	UFUNCTION(BlueprintCallable)
 	void PlaceAIAtPatrolPoint(int32 Section, int32 Index);
@@ -104,12 +134,15 @@ protected:
 
 private:
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	ASurvivorCharacter* PlayerCharacter;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	ACreatureAIController* AIController;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	AAIPointContextManager* PatrolManager;
+
+	UPROPERTY()
+	FRecordAIState LastRecord;
 };

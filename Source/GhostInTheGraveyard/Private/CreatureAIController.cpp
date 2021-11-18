@@ -150,6 +150,20 @@ void ACreatureAIController::ReportEQSQueryResult(TSharedPtr<FEnvQueryResult> Res
 	Result->GetAllAsLocations(ResultLocations);
 }
 
+bool ACreatureAIController::CanBeTeleported() const
+{
+	if (GetBlackboardComponent())
+	{
+		ECreatureState State = (ECreatureState)GetBlackboardComponent()->GetValueAsEnum(FBBKeys::ActiveState);
+		
+		if (State == ECreatureState::ST_Pursue || State == ST_Investigate)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 bool ACreatureAIController::SendAIToPatrolPoint(AAIPointContextManager* Manager, int32 Section, int32 Index, bool bTeleport /*= false*/)
 {
 	if (PatrolTrackerComponent)
@@ -283,6 +297,13 @@ void ACreatureAIController::OnTargetPerceptionUpdate(AActor* InActor, const FAIS
 			{
 				BlackboardComponent->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Investigate);
 				BlackboardComponent->SetValueAsVector(FBBKeys::TargetLocation, Stimulus.StimulusLocation);
+				
+				float CurrentTime = GetWorld()->GetTimeSeconds();
+				if (CurrentTime - LastHeardSound >= AIBarkTimeNeeded)
+				{
+					if (HeardAIBark && GetCharacter()) UGameplayStatics::PlaySoundAtLocation(GetWorld(), HeardAIBark, GetCharacter()->GetActorLocation());
+					LastHeardSound = CurrentTime;
+				}
 			}
 		}
 	}
