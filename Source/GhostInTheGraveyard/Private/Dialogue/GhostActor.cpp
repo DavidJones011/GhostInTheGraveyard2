@@ -3,8 +3,10 @@
 
 #include "Dialogue/GhostActor.h"
 
-void AGhostActor::Dissapate()
-{
-	if(GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 1.0F, FColor::Yellow, TEXT("Execute!"));
-}
+// void AGhostActor::Dissapate()
+// {
+// 	if (GEngine)
+// 	{
+// 		GEngine->AddOnScreenDebugMessage(-1, 1.0F, FColor::Yellow, TEXT("Execute!"));
+// 	}
+// }

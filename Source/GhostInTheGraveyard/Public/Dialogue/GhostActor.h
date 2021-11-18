@@ -16,6 +16,8 @@ class GHOSTINTHEGRAVEYARD_API AGhostActor : public ADialogueActor
 
 public:
 
-	UFUNCTION()
+	UFUNCTION(BlueprintNativeEvent)
 	void Dissapate();
+
+	virtual void Dissapate_Implementation() {};
 };
