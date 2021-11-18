@@ -37,9 +37,12 @@ public:
 public:
 
 	/* IInteractable interface */
-	void Interact(ASurvivorCharacter* player) override;
-	void EndInteract(ASurvivorCharacter* player) override;
-	bool CanInteract(ASurvivorCharacter* player) override { return true; }
+	UFUNCTION(BlueprintCallable)
+	void Interact(ASurvivorCharacter* player);
+	UFUNCTION(BlueprintCallable)
+	void EndInteract(ASurvivorCharacter* player);
+	UFUNCTION(BlueprintCallable)
+	bool CanInteract(ASurvivorCharacter* player) { return true; }
 	/* IInteractable interface */
 
 	UFUNCTION(BlueprintCallable)

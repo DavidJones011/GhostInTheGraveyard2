@@ -44,9 +44,9 @@ private:
 
 public:	
 	UFUNCTION(BlueprintCallable)
-	virtual void Interact(ASurvivorCharacter* player) override;
+	void Interact(ASurvivorCharacter* player);
 	UFUNCTION(BlueprintCallable)
-	virtual bool CanInteract(ASurvivorCharacter* player) override;
+	bool CanInteract(ASurvivorCharacter* player);
 	UFUNCTION(BlueprintCallable)
-	virtual void EndInteract(ASurvivorCharacter* player) override;
+	void EndInteract(ASurvivorCharacter* player);
 };

@@ -38,11 +38,11 @@ protected:
 
 public:
 	UFUNCTION(BlueprintCallable)
-	virtual void Interact(ASurvivorCharacter* player);
+	void Interact(ASurvivorCharacter* player);
 	UFUNCTION(BlueprintCallable)
-	virtual void EndInteract(ASurvivorCharacter* player);
+	void EndInteract(ASurvivorCharacter* player);
 	UFUNCTION(BlueprintCallable)
-	virtual bool CanInteract(ASurvivorCharacter* player);
+	bool CanInteract(ASurvivorCharacter* player);
 	UPROPERTY(BlueprintReadWrite);
 	ASurvivorCharacter* trappedPlayer;
 
