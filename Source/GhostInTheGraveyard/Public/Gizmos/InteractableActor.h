@@ -26,11 +26,11 @@ public:
 
 	/* Begin IInteractable interface */
 	UFUNCTION(BlueprintCallable)
-	virtual void Interact(ASurvivorCharacter* player) { OnInteract(player); };
+	void Interact(ASurvivorCharacter* player) { OnInteract(player); };
 	UFUNCTION(BlueprintCallable)
-	virtual void EndInteract(ASurvivorCharacter* player) { OnEndInteract(player); };
+	void EndInteract(ASurvivorCharacter* player) { OnEndInteract(player); };
 	UFUNCTION(BlueprintCallable)
-	virtual bool CanInteract(ASurvivorCharacter* player) { return OnCanInteract(player); }
+	bool CanInteract(ASurvivorCharacter* player) { return OnCanInteract(player); }
 	/* End IInteractable interface */
 
 	UFUNCTION(BlueprintNativeEvent)
