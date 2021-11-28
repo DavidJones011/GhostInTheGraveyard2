@@ -8,6 +8,7 @@
 #include "DialogueActor.generated.h"
 
 class UDialogueComponent;
+class UAudioComponent;
 
 UCLASS()
 class GHOSTINTHEGRAVEYARD_API ADialogueActor : public AActor, public IInteractable

@@ -106,8 +106,13 @@ void UDialogueComponent::RunDialogueAsset(UDialogueAsset* Dialogue)
 		}
 		else
 		{
-			if (DialogueSound) UGameplayStatics::PlaySound2D(GetWorld(), DialogueSound);
-			// no timer, awaits input for continuing
+			if (DialogueSound)
+			{
+				// no timer, awaits input for continuing
+				USoundConcurrency SoundConcurrency;
+				SoundConcurrency.Concurrency.bLimitToOwner = 1;
+				UGameplayStatics::PlaySound2D(GetWorld(), DialogueSound, 1.0F, 1.0F, 0.0F, &SoundConcurrency, GetOwner());
+			}
 		}
 	}
 }

@@ -19,7 +19,6 @@ ADialogueActor::ADialogueActor()
 void ADialogueActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void ADialogueActor::ExitedConversation(ASurvivorCharacter* CharacterInstigator)
