@@ -9,6 +9,7 @@ class IInteractable;
 class AHidingSpot;
 class ATrap;
 class UDialogueUserWidget;
+class UInteractionWidget;
 class ADialogueActor;
 class UInventoryComponent;
 
@@ -35,6 +36,9 @@ private:
 
 	UPROPERTY(Transient)
 	UDialogueUserWidget* DialogueWidget = nullptr;
+
+	UPROPERTY(Transient)
+	UInteractionWidget* InteractWidget = nullptr;
 
 	UPROPERTY(Transient)
 	ADialogueActor* InteractingDialogueActor = nullptr;
@@ -64,6 +68,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Dialogue")
 	TSubclassOf<UUserWidget> DialogueWidgetClass;
+
+	UPROPERTY(EditAnywhere, Category = "Interact")
+	TSubclassOf<UUserWidget> InteractWidgetClass;
 
 protected:
 

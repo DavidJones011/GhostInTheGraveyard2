@@ -25,6 +25,7 @@ void ADialogueActor::ExitedConversation(ASurvivorCharacter* CharacterInstigator)
 {
 	CharacterInstigator->SetInteractingDialogueActor(nullptr);
 	CharacterInstigator->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	CharacterInstigator->currentInteract = nullptr;
 }
 
 // Called every frame

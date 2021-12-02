@@ -24,6 +24,9 @@ private:
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Dialogue", meta = (AllowPrivateAccess = "true"))
 	UDialogueComponent* DialogueComponent = nullptr;
 
+	UPROPERTY(EditAnywhere)
+	FString InteractMessage = "Press F to Talk";
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -41,6 +44,7 @@ public:
 	void Interact(ASurvivorCharacter* player) override;
 	void EndInteract(ASurvivorCharacter* player) override;
 	bool CanInteract(ASurvivorCharacter* player) override { return true; }
+	virtual FString GetInteractionMessage(ASurvivorCharacter* player) { return InteractMessage; }
 	/* IInteractable interface */
 
 	UFUNCTION(BlueprintCallable)

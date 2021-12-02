@@ -12,6 +12,11 @@ class GHOSTINTHEGRAVEYARD_API AInteractableActor : public AActor, public IIntera
 {
 	GENERATED_BODY()
 	
+private:
+
+	UPROPERTY(EditAnywhere)
+	FString InteractMessage = FString("Press F to Take");
+
 public:	
 	// Sets default values for this actor's properties
 	AInteractableActor();
@@ -31,6 +36,8 @@ public:
 	virtual void EndInteract(ASurvivorCharacter* player) { OnEndInteract(player); };
 	UFUNCTION(BlueprintCallable)
 	virtual bool CanInteract(ASurvivorCharacter* player) { return OnCanInteract(player); }
+	UFUNCTION(BlueprintCallable)
+	virtual FString GetInteractionMessage(ASurvivorCharacter* player) { return InteractMessage; }
 	/* End IInteractable interface */
 
 	UFUNCTION(BlueprintNativeEvent)
@@ -44,5 +51,4 @@ public:
 	UFUNCTION(BlueprintNativeEvent)
 	bool OnCanInteract(ASurvivorCharacter* player);
 	virtual bool OnCanInteract_Implementation(ASurvivorCharacter* player) { return true; }
-
 };

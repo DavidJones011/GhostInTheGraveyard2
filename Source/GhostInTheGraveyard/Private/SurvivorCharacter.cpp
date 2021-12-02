@@ -22,6 +22,7 @@
 #include "Components/InventoryComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Gizmos/Trap.h"
+#include "InteractionWidget.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -87,11 +88,27 @@ void ASurvivorCharacter::BeginPlay()
 		Director->RegisterPlayer(this);
 
 		// create the dialogue widget
-		if (IsPlayerControlled() && DialogueWidgetClass)
+		if (IsPlayerControlled())
 		{
-			DialogueWidget = Cast<UDialogueUserWidget>(CreateWidget(Cast<APlayerController>(GetController()), DialogueWidgetClass));
-			DialogueWidget->AddToViewport();
-			DialogueWidget->SetVisibility(ESlateVisibility::Hidden);
+			if (DialogueWidgetClass)
+			{
+				DialogueWidget = Cast<UDialogueUserWidget>(CreateWidget(GetWorld(), DialogueWidgetClass));
+				if(DialogueWidget)
+				{
+					DialogueWidget->AddToViewport();
+					DialogueWidget->SetVisibility(ESlateVisibility::Hidden);
+				}
+			}
+			
+			if (InteractWidgetClass)
+			{
+				InteractWidget = Cast<UInteractionWidget>(CreateWidget(GetWorld(), InteractWidgetClass));
+				if (InteractWidget)
+				{
+					InteractWidget->AddToViewport();
+					InteractWidget->SetVisibility(ESlateVisibility::Hidden);
+				}
+			}
 		}
 	}
 }
@@ -168,23 +185,34 @@ void ASurvivorCharacter::Tick(float DeltaSeconds) {
 
 	if (bHit)
 	{
-		if (Hit.IsValidBlockingHit()) 
+		IInteractable* Interactable = Cast<IInteractable>(Hit.Actor);
+		if (Interactable && Interactable->CanInteract(this))
 		{
-			IInteractable* Interactable = Cast<IInteractable>(Hit.Actor);
-			if (Interactable && Interactable->CanInteract(this))
+			if (InteractWidget && currentInteract != Interactable)
 			{
-				CanInteract = true;
-				currentInteract = Interactable;
+				InteractWidget->SetVisibility(ESlateVisibility::Visible);
+				InteractWidget->SetInteractMessage(FText::FromString(Interactable->GetInteractionMessage(this)));
 			}
+
+			CanInteract = true;
+			currentInteract = Interactable;
 		}
 		else
 		{
+			if (InteractWidget && currentInteract)
+			{
+				InteractWidget->SetVisibility(ESlateVisibility::Hidden);
+			}
 			CanInteract = false;
 			currentInteract = nullptr;
 		}
 	}
 	else
 	{
+		if (InteractWidget && currentInteract)
+		{
+			InteractWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
 		CanInteract = false;
 		currentInteract = nullptr;
 	}
@@ -253,6 +281,11 @@ void ASurvivorCharacter::Interact()
 	if (currentInteract) {
 		//if (GEngine)
 			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Interacting"));
+		if (InteractWidget)
+		{
+			InteractWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
+
 		currentInteract->Interact(this);
 	}
 
