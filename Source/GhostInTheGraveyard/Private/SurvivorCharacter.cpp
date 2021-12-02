@@ -20,6 +20,8 @@
 #include "Perception/AISense_Hearing.h"
 #include "Dialogue/DialogueUserWidget.h"
 #include "Components/InventoryComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Gizmos/Trap.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -67,8 +69,6 @@ bool ASurvivorCharacter::CanBeSeenFrom(const FVector& ObserverLocation, FVector&
 			OutSightStrength = 1.0F;
 			bSuccess = true;
 		}
-
-
 	}
 
 	return bSuccess;
@@ -120,9 +120,9 @@ void ASurvivorCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	// We have 2 versions of the rotation bindings to handle different kinds of devices differently
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
 	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
-	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
+	PlayerInputComponent->BindAxis("Turn", this, &ASurvivorCharacter::Turn);
 	PlayerInputComponent->BindAxis("TurnRate", this, &ASurvivorCharacter::TurnAtRate);
-	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+	PlayerInputComponent->BindAxis("LookUp", this, &ASurvivorCharacter::Lookup);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &ASurvivorCharacter::LookUpAtRate);
 }
 
@@ -134,7 +134,7 @@ void ASurvivorCharacter::OnResetVR()
 void ASurvivorCharacter::Tick(float DeltaSeconds) {
 
 
-	if (!Hidden && !Trapped) {
+	/*if (!Hidden && !Trapped) {
 		FHitResult hit;
 		FVector end = this->GetActorLocation() + this->GetActorForwardVector() * 500;
 		FCollisionObjectQueryParams params = FCollisionObjectQueryParams(ECollisionChannel::ECC_WorldDynamic);
@@ -155,13 +155,46 @@ void ASurvivorCharacter::Tick(float DeltaSeconds) {
 			}
 
 		}
-	}
-	
-}
+	}*/
 
+	if (Hidden || Trapped)
+		return;
+
+	FVector Start = GetFirstPersonCameraComponent()->GetComponentLocation();
+	FVector End = Start + GetFirstPersonCameraComponent()->GetForwardVector() * 500.0F;
+	FHitResult Hit;
+	FCollisionObjectQueryParams ObjectQueryParams = FCollisionObjectQueryParams(ECollisionChannel::ECC_WorldDynamic);
+	bool bHit = GetWorld()->LineTraceSingleByObjectType(Hit, Start, End, ObjectQueryParams);
+
+	if (bHit)
+	{
+		if (Hit.IsValidBlockingHit()) 
+		{
+			IInteractable* Interactable = Cast<IInteractable>(Hit.Actor);
+			if (Interactable && Interactable->CanInteract(this))
+			{
+				CanInteract = true;
+				currentInteract = Interactable;
+			}
+		}
+		else
+		{
+			CanInteract = false;
+			currentInteract = nullptr;
+		}
+	}
+	else
+	{
+		CanInteract = false;
+		currentInteract = nullptr;
+	}
+}
 
 void ASurvivorCharacter::MoveForward(float Value)
 {
+	if (GetInteractingDialogueActor())
+		return;
+
 	if (Value != 0.0f)
 	{
 		// add movement in that direction
@@ -172,6 +205,9 @@ void ASurvivorCharacter::MoveForward(float Value)
 
 void ASurvivorCharacter::MoveRight(float Value)
 {
+	if (GetInteractingDialogueActor())
+		return;
+
 	if (Value != 0.0f)
 	{
 		// add movement in that direction
@@ -180,14 +216,34 @@ void ASurvivorCharacter::MoveRight(float Value)
 	}
 }
 
+void ASurvivorCharacter::Turn(float Val)
+{
+	if (GetInteractingDialogueActor())
+		return;
+
+	AddControllerYawInput(Val);
+}
+
+void ASurvivorCharacter::Lookup(float Val)
+{
+	if (GetInteractingDialogueActor())
+		return;
+
+	AddControllerPitchInput(Val);
+}
+
 void ASurvivorCharacter::TurnAtRate(float Rate)
 {
+	if (GetInteractingDialogueActor())
+		return;
 	// calculate delta for this frame from the rate information
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 }
 
 void ASurvivorCharacter::LookUpAtRate(float Rate)
 {
+	if (GetInteractingDialogueActor())
+		return;
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
@@ -209,7 +265,6 @@ void ASurvivorCharacter::EndInteract()
 	}
 }
 
-
 bool ASurvivorCharacter::Hide(AHidingSpot* spot)
 {
 	if (!Hidden) {
@@ -223,9 +278,8 @@ bool ASurvivorCharacter::Hide(AHidingSpot* spot)
 	} else {
 		return false;
 	}
-
-
 }
+
 void ASurvivorCharacter::Leave(AHidingSpot* spot) {
 	if (Hidden) {
 		Hidden = false;
@@ -238,6 +292,14 @@ void ASurvivorCharacter::Leave(AHidingSpot* spot) {
 bool ASurvivorCharacter::Trap(ATrap* trap) {
 	if (!Trapped) {
 		GetController()->SetIgnoreMoveInput(true);
+
+		UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement();
+		if (CharacterMovementComponent)
+		{
+			CharacterMovementComponent->SetMovementMode(EMovementMode::MOVE_None);
+			SetActorLocation(trap->GetActorLocation() + FVector::UpVector * GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+		}
+
 		currentInteract = (IInteractable*) trap;
 		Trapped = true;
 		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 1.0, this, 0.0f);
@@ -252,6 +314,11 @@ bool ASurvivorCharacter::Trap(ATrap* trap) {
 void ASurvivorCharacter::EscapeTrap(ATrap* trap) {
 	if (Trapped) {
 		GetController()->SetIgnoreMoveInput(false);
+		UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement();
+		if (CharacterMovementComponent)
+		{
+			CharacterMovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
+		}
 		currentInteract = 0;
 		Trapped = false;
 	}

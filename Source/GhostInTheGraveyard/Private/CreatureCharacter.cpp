@@ -56,4 +56,3 @@ bool ACreatureCharacter::CheckForActorInFront(float Distance, FHitResult& OutRes
 
 	return bHit;
 }
-
