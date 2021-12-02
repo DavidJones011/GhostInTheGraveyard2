@@ -27,6 +27,8 @@ struct FRecordAIState
 
 	UPROPERTY()
 	FVector AICharacterLocation;
+
+	TWeakObjectPtr<AActor> LastCheckpoint;
 };
 
 /**
@@ -42,7 +44,7 @@ public:
 	UAIDirectorSubsystem();
 
 	UFUNCTION(BlueprintCallable)
-	void RecordState();
+	void RecordState(AActor* CheckpointActor);
 
 	UFUNCTION(BlueprintCallable)
 	void LoadRecordedState();

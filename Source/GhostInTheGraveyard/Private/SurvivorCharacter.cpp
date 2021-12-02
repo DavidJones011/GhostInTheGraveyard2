@@ -390,4 +390,15 @@ void ASurvivorCharacter::Landed(const FHitResult& Hit)
 
 void ASurvivorCharacter::Kill() {
 	GetController()->SetIgnoreMoveInput(true);
+	if (Trapped)
+	{
+		GetController()->SetIgnoreMoveInput(false);
+		UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement();
+		if (CharacterMovementComponent)
+		{
+			CharacterMovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
+		}
+		currentInteract = 0;
+		Trapped = false;
+	}
 }
