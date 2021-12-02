@@ -194,8 +194,8 @@ void ASurvivorCharacter::Tick(float DeltaSeconds) {
 		{
 			if (InteractWidget && currentInteract != Interactable)
 			{
-				InteractWidget->SetVisibility(ESlateVisibility::Visible);
 				InteractWidget->SetInteractMessage(FText::FromString(Interactable->GetInteractionMessage(this)));
+				InteractWidget->SetVisibility(ESlateVisibility::Visible);
 			}
 
 			CanInteract = true;
@@ -211,6 +211,11 @@ void ASurvivorCharacter::Tick(float DeltaSeconds) {
 			currentInteract = nullptr;
 		}
 	}
+	else if (Trapped && InteractWidget) 
+	{
+		InteractWidget->SetInteractMessage(FText::FromString(currentInteract->GetInteractionMessage(this)));
+		InteractWidget->SetVisibility(ESlateVisibility::Visible);
+	} 
 	else
 	{
 		if (InteractWidget && currentInteract)

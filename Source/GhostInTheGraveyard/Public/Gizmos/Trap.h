@@ -55,6 +55,10 @@ public:
 	virtual void EndInteract(ASurvivorCharacter* player);
 	UFUNCTION(BlueprintCallable)
 	virtual bool CanInteract(ASurvivorCharacter* player);
+
+	UFUNCTION(BlueprintCallable)
+	virtual FString GetInteractionMessage(ASurvivorCharacter* player);
+
 	UPROPERTY(BlueprintReadWrite);
 	ASurvivorCharacter* trappedPlayer;
 

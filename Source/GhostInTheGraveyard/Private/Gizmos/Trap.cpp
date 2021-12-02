@@ -69,6 +69,11 @@ bool ATrap::CanInteract(ASurvivorCharacter* player) {
 	return player == trappedPlayer;
 }
 
+FString ATrap::GetInteractionMessage(ASurvivorCharacter* player) {
+	return FString("Press F to Escape Trap");
+}
+
+
 void ATrap::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
 	ASurvivorCharacter* player = Cast<ASurvivorCharacter>(OtherActor);
 
