@@ -23,6 +23,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Gizmos/Trap.h"
 #include "InteractionWidget.h"
+#include "Components/HeadBobComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -45,6 +46,9 @@ ASurvivorCharacter::ASurvivorCharacter(const FObjectInitializer& ObjectInitializ
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
 
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory Component"));
+	GetCharacterMovement()->bApplyGravityWhileJumping = false;
+
+	HeadBobComponent = CreateDefaultSubobject<UHeadBobComponent>(TEXT("HeadBob Component"));
 }
 
 //TODO: Implemented this way for now, but should change in the future to fit the games design
@@ -288,7 +292,6 @@ void ASurvivorCharacter::Interact()
 
 		currentInteract->Interact(this);
 	}
-
 }
 
 void ASurvivorCharacter::EndInteract()
@@ -304,8 +307,10 @@ bool ASurvivorCharacter::Hide(AHidingSpot* spot)
 		Hidden = true;
 		GetController()->SetIgnoreMoveInput(true);
 		GetController()->StopMovement();
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 		SetActorLocation(spot->hidingPoint->GetComponentLocation());
-		FirstPersonCameraComponent->SetRelativeLocation(cameraHidePosition);
+		FirstPersonCameraComponent->AddLocalOffset(-cameraNormalPosition);
+		HeadBobComponent->SetCameraRelativeLocationStart(FirstPersonCameraComponent->GetRelativeLocation());
 
 		return true;
 	} else {
@@ -317,8 +322,11 @@ void ASurvivorCharacter::Leave(AHidingSpot* spot) {
 	if (Hidden) {
 		Hidden = false;
 		GetController()->SetIgnoreMoveInput(false);
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 		SetActorLocation(spot->outPoint->GetComponentLocation());
-		FirstPersonCameraComponent->SetRelativeLocation(cameraNormalPosition);
+		FirstPersonCameraComponent->AddLocalOffset(cameraNormalPosition);
+		HeadBobComponent->SetCameraRelativeLocationStart(FirstPersonCameraComponent->GetRelativeLocation());
+		currentInteract = nullptr;
 	}
 }
 
@@ -361,6 +369,22 @@ void ASurvivorCharacter::Jump() {
 	if (!Hidden && !Trapped) {
 		Super::Jump();
 	}
+}
+
+void ASurvivorCharacter::NotifyJumpApex()
+{
+// 	Super::NotifyJumpApex();
+// 
+// 	if(GetCharacterMovement())
+// 		GetCharacterMovement()->GravityScale = 10.0;
+}
+
+void ASurvivorCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+// 	if (GetCharacterMovement())
+// 		GetCharacterMovement()->GravityScale = 1.0;
 }
 
 void ASurvivorCharacter::Kill() {

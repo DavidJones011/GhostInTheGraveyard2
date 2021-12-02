@@ -12,6 +12,7 @@ class UDialogueUserWidget;
 class UInteractionWidget;
 class ADialogueActor;
 class UInventoryComponent;
+class UHeadBobComponent;
 
 UCLASS(config = Game)
 class GHOSTINTHEGRAVEYARD_API ASurvivorCharacter : public AGhostInTheGraveyardCharacter, public IAISightTargetInterface
@@ -24,7 +25,9 @@ public:
 
 private:
 	
-	const FVector cameraNormalPosition = FVector(0.0f,0.0f,70.0f);
+	UPROPERTY(EditAnywhere)
+	FVector cameraNormalPosition = FVector(0.0f,0.0f, 90.0f);
+
 	const FVector cameraHidePosition = FVector(0.0f, 0.0f, 0.0f);
 	
 	/** First person camera */
@@ -33,6 +36,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UInventoryComponent* InventoryComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UHeadBobComponent* HeadBobComponent;
 
 	UPROPERTY(Transient)
 	UDialogueUserWidget* DialogueWidget = nullptr;
@@ -118,6 +124,10 @@ public:
 	void Leave(AHidingSpot* spot);
 	void EscapeTrap(ATrap* trap);
 	virtual void Jump() override;
+
+	virtual void NotifyJumpApex() override;
+
+	virtual void Landed(const FHitResult& Hit) override;
 
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
