@@ -7,14 +7,28 @@
 #include "Components/BoxComponent.h"
 #include "Interactable.h"
 #include "SurvivorCharacter.h"
-
 #include "Trap.generated.h"
 
+class USoundBase;
 
 UCLASS()
 class GHOSTINTHEGRAVEYARD_API ATrap : public AActor, public IInteractable
 {
 	GENERATED_BODY()
+
+private:
+
+	UPROPERTY(EditAnywhere)
+	float TimeToDisableTrap = 2.0F;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UCameraShakeBase> TrapCamShake;
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* TrapSound;
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* DisableSound;
 
 public:
 	// Sets default values for this actor's properties
@@ -28,8 +42,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components");
 	class UBoxComponent* collider;
-
-
 
 protected:
 	// Called when the game starts or when spawned

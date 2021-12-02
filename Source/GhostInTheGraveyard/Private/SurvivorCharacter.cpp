@@ -184,8 +184,8 @@ void ASurvivorCharacter::Tick(float DeltaSeconds) {
 	FVector Start = GetFirstPersonCameraComponent()->GetComponentLocation();
 	FVector End = Start + GetFirstPersonCameraComponent()->GetForwardVector() * 500.0F;
 	FHitResult Hit;
-	FCollisionObjectQueryParams ObjectQueryParams = FCollisionObjectQueryParams(ECollisionChannel::ECC_WorldDynamic);
-	bool bHit = GetWorld()->LineTraceSingleByObjectType(Hit, Start, End, ObjectQueryParams);
+	FCollisionQueryParams QueryParams = FCollisionQueryParams("Interact", false, this);
+	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECollisionChannel::ECC_WorldDynamic, QueryParams);
 
 	if (bHit)
 	{
@@ -368,23 +368,24 @@ void ASurvivorCharacter::EscapeTrap(ATrap* trap) {
 void ASurvivorCharacter::Jump() {
 	if (!Hidden && !Trapped) {
 		Super::Jump();
+		if (HeadBobComponent)
+		{
+			HeadBobComponent->PlayAdditiveCurve("Jump");
+		}
 	}
 }
 
 void ASurvivorCharacter::NotifyJumpApex()
 {
-// 	Super::NotifyJumpApex();
-// 
-// 	if(GetCharacterMovement())
-// 		GetCharacterMovement()->GravityScale = 10.0;
+	Super::NotifyJumpApex();
 }
 
 void ASurvivorCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
-// 	if (GetCharacterMovement())
-// 		GetCharacterMovement()->GravityScale = 1.0;
+	if(HeadBobComponent)
+		HeadBobComponent->PlayAdditiveCurve("Land");
 }
 
 void ASurvivorCharacter::Kill() {

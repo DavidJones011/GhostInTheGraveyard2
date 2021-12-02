@@ -3,6 +3,7 @@
 
 #include "Gizmos/Trap.h"
 #include "Components/BoxComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ATrap::ATrap()
@@ -38,7 +39,8 @@ void ATrap::Tick(float DeltaTime)
 
 	if (escaping) {
 		escapeProgress += DeltaTime;
-		if (escapeProgress >= 5.0) {
+		if (escapeProgress >= TimeToDisableTrap) {
+			if (DisableSound) UGameplayStatics::PlaySoundAtLocation(GetWorld(), DisableSound, GetActorLocation(), 1.0f);
 			trappedPlayer->EscapeTrap(this);
 			disabled = true;
 			SetActorHiddenInGame(true);
@@ -75,6 +77,9 @@ void ATrap::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AAct
 	ASurvivorCharacter* player = Cast<ASurvivorCharacter>(OtherActor);
 
 	if (player) {
+
+		if(TrapSound) UGameplayStatics::PlaySoundAtLocation(GetWorld(), TrapSound, GetActorLocation(), 1.0f);
+		if (TrapCamShake) UGameplayStatics::PlayWorldCameraShake(GetWorld(), TrapCamShake, GetActorLocation(), 0.0F, 1500.0F, 0.5F);
 		player->Trap(this);
 	}
 }

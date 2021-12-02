@@ -24,7 +24,18 @@ private:
 	float BaseTimeAccumulator;
 
 	UPROPERTY()
+	float AddTimeAccumulator;
+
+	UPROPERTY()
 	FVector CameraRelativeLocationStart;
+
+	UPROPERTY(Transient)
+	bool bPlayingAdditiveCurve = false;
+
+	UPROPERTY(EditAnywhere)
+	TMap<FName, UCurveVector*> AdditiveCurves;
+
+	FTimerHandle AdditiveCurveTimerHandle;
 
 protected:
 	// Called when the game starts
@@ -36,6 +47,9 @@ protected:
 	UPROPERTY(EditAnywhere)
 	UCurveVector* WalkCurve;
 
+	UPROPERTY(Transient)
+	UCurveVector* CurrentAdditiveCurve;
+
 	virtual FVector StepVectorCurve(const UCurveVector* InCurve, float DeltaTime, bool bLoop = true);
 
 public:	
@@ -44,5 +58,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetCameraRelativeLocationStart(const FVector& Location) { CameraRelativeLocationStart = Location; }
-	
+
+	void PlayAdditiveCurve(const FName& Name);
+
+	void EndAdditiveAnim() { bPlayingAdditiveCurve = false; }
 };

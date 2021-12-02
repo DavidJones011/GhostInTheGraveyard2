@@ -37,7 +37,8 @@ FVector UHeadBobComponent::StepVectorCurve(const UCurveVector* InCurve, float De
 	float MinTime, MaxTime;
 	InCurve->GetTimeRange(MinTime, MaxTime);
 
-	BaseTimeAccumulator += DeltaTime;	
+	BaseTimeAccumulator += DeltaTime;
+	AddTimeAccumulator += DeltaTime;
 
 	// update time accumulator with looping
 	if (bLoop)
@@ -57,7 +58,7 @@ FVector UHeadBobComponent::StepVectorCurve(const UCurveVector* InCurve, float De
 	}
 	else
 	{
-		BaseTimeAccumulator = FMath::Clamp<float>(BaseTimeAccumulator, MinTime, MaxTime);
+		BaseTimeAccumulator = FMath::Clamp<float>(AddTimeAccumulator, MinTime, MaxTime);
 	}
 
 	return InCurve->GetVectorValue(BaseTimeAccumulator);
@@ -86,8 +87,26 @@ void UHeadBobComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 		TargetRelativeLocation = StepVectorCurve(IdleCurve, DeltaTime, true);
 	}
 
+	if (bPlayingAdditiveCurve)
+	{
+		TargetRelativeLocation += StepVectorCurve(CurrentAdditiveCurve, DeltaTime, false);
+	}
+
 	Camera->SetRelativeLocation(CameraRelativeLocationStart + TargetRelativeLocation);
 }
 
+void UHeadBobComponent::PlayAdditiveCurve(const FName& Name)
+{
+	CurrentAdditiveCurve = *AdditiveCurves.Find(Name);
+	if(!CurrentAdditiveCurve)
+		return;
+
+	float MinTime, MaxTime;
+	CurrentAdditiveCurve->GetTimeRange(MinTime, MaxTime);
+	const float Duration = MaxTime - MinTime;
+	GetWorld()->GetTimerManager().SetTimer(AdditiveCurveTimerHandle, this, &UHeadBobComponent::EndAdditiveAnim, Duration);
+	bPlayingAdditiveCurve = true;
+	AddTimeAccumulator = MinTime;
+}
 
 
