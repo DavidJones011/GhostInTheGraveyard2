@@ -167,8 +167,7 @@ void ASurvivorCharacter::Tick(float DeltaSeconds) {
 			if (interact && interact->CanInteract(this)) {
 				CanInteract = true;
 				currentInteract = interact;
-				//if (GEngine)
-					//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("CanInteract"));
+
 			}
 			else {
 				CanInteract = false;
@@ -287,6 +286,7 @@ void ASurvivorCharacter::LookUpAtRate(float Rate)
 
 void ASurvivorCharacter::Interact()
 {
+
 	if (currentInteract) {
 		//if (GEngine)
 			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Interacting"));
@@ -325,7 +325,6 @@ bool ASurvivorCharacter::Hide(AHidingSpot* spot)
 
 void ASurvivorCharacter::Leave(AHidingSpot* spot) {
 	if (Hidden) {
-		Hidden = false;
 		GetController()->SetIgnoreMoveInput(false);
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 		SetActorLocation(spot->outPoint->GetComponentLocation());
@@ -338,7 +337,6 @@ void ASurvivorCharacter::Leave(AHidingSpot* spot) {
 bool ASurvivorCharacter::Trap(ATrap* trap) {
 	if (!Trapped) {
 		GetController()->SetIgnoreMoveInput(true);
-
 		UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement();
 		if (CharacterMovementComponent)
 		{

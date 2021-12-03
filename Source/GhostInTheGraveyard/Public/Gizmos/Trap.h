@@ -50,9 +50,9 @@ protected:
 
 public:
 	UFUNCTION(BlueprintCallable)
-	virtual void Interact(ASurvivorCharacter* player);
+	void Interact(ASurvivorCharacter* player);
 	UFUNCTION(BlueprintCallable)
-	virtual void EndInteract(ASurvivorCharacter* player);
+	void EndInteract(ASurvivorCharacter* player);
 	UFUNCTION(BlueprintCallable)
 	virtual bool CanInteract(ASurvivorCharacter* player);
 
@@ -61,6 +61,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite);
 	ASurvivorCharacter* trappedPlayer;
+
+	UFUNCTION(BluePrintNativeEvent)
+	void Trap(ASurvivorCharacter* player);
 
 
 public:
@@ -71,6 +74,7 @@ public:
 
 	bool disabled;
 
+	UFUNCTION()
 	void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 };

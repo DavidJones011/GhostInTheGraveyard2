@@ -29,7 +29,7 @@ ATrap::ATrap()
 void ATrap::BeginPlay()
 {
 	Super::BeginPlay();
-
+	collider->OnComponentBeginOverlap.AddDynamic(this, &ATrap::OnOverlapBegin);
 }
 
 // Called every frame
@@ -75,6 +75,9 @@ FString ATrap::GetInteractionMessage(ASurvivorCharacter* player) {
 
 
 void ATrap::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Trapped"));
+
 	ASurvivorCharacter* player = Cast<ASurvivorCharacter>(OtherActor);
 
 	if (player) {
@@ -82,5 +85,11 @@ void ATrap::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AAct
 		if(TrapSound) UGameplayStatics::PlaySoundAtLocation(GetWorld(), TrapSound, GetActorLocation(), 1.0f);
 		if (TrapCamShake) UGameplayStatics::PlayWorldCameraShake(GetWorld(), TrapCamShake, GetActorLocation(), 0.0F, 1500.0F, 0.5F);
 		player->Trap(this);
+		trappedPlayer = player;
+		this->Trap(player);
 	}
+}
+
+void ATrap::Trap_Implementation(ASurvivorCharacter* player) {
+
 }
