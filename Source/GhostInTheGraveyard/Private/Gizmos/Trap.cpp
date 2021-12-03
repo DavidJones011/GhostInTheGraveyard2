@@ -53,8 +53,6 @@ void ATrap::Tick(float DeltaTime)
 
 void ATrap::Interact(ASurvivorCharacter* player) {
 	if (trappedPlayer == player) {
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Escaping"));
 		escaping = true;
 	}
 }
@@ -63,8 +61,6 @@ void ATrap::EndInteract(ASurvivorCharacter* player) {
 		Destroy();
 	}
 	else if (trappedPlayer == player) {
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Don't give up"));
 		escaping = false;
 		escapeProgress = 0;
 	}
@@ -72,6 +68,11 @@ void ATrap::EndInteract(ASurvivorCharacter* player) {
 bool ATrap::CanInteract(ASurvivorCharacter* player) {
 	return player == trappedPlayer;
 }
+
+FString ATrap::GetInteractionMessage(ASurvivorCharacter* player) {
+	return FString("Press F to Escape Trap");
+}
+
 
 void ATrap::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
 	ASurvivorCharacter* player = Cast<ASurvivorCharacter>(OtherActor);
