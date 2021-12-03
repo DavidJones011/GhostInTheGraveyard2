@@ -48,5 +48,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool CanInteract(ASurvivorCharacter* player);
 	UFUNCTION(BlueprintCallable)
-	void EndInteract(ASurvivorCharacter* player);
+	virtual void EndInteract(ASurvivorCharacter* player) override;
+	UFUNCTION(BlueprintCallable)
+	virtual FString GetInteractionMessage(ASurvivorCharacter* player) { return FString("Press F to Hide"); }
 };

@@ -6,6 +6,7 @@
 #include "CollisionQueryParams.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/DetectorComponent.h"
+#include "AudioDevice.h"
 
 // Sets default values
 ACreatureCharacter::ACreatureCharacter(const FObjectInitializer& ObjectInitializer)
@@ -15,6 +16,13 @@ ACreatureCharacter::ACreatureCharacter(const FObjectInitializer& ObjectInitializ
 	PrimaryActorTick.bCanEverTick = true;
 	AIControllerClass = ACreatureAIController::StaticClass();
 
+	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Audio Component"));
+	if (AudioComponent)
+	{
+		AudioComponent->SetupAttachment(RootComponent);
+		AudioComponent->Activate();
+		AudioComponent->bAutoDestroy = false;
+	}
 }
 
 // Called when the game starts or when spawned
@@ -48,4 +56,3 @@ bool ACreatureCharacter::CheckForActorInFront(float Distance, FHitResult& OutRes
 
 	return bHit;
 }
-

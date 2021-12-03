@@ -20,7 +20,7 @@ UAIDirectorSubsystem::UAIDirectorSubsystem()
 
 }
 
-void UAIDirectorSubsystem::RecordState()
+void UAIDirectorSubsystem::RecordState(AActor* CheckpointActor)
 {
 	if (PlayerCharacter)
 	{
@@ -43,6 +43,8 @@ void UAIDirectorSubsystem::RecordState()
 		LastRecord.AISection = -1;
 		LastRecord.AICharacterLocation = FVector::ZeroVector;
 	}
+
+	LastRecord.LastCheckpoint = CheckpointActor;
 }
 
 void UAIDirectorSubsystem::LoadRecordedState()
@@ -54,6 +56,9 @@ void UAIDirectorSubsystem::LoadRecordedState()
 		if (AICharacter) { AICharacter->TeleportTo(LastRecord.AICharacterLocation, FRotator::ZeroRotator); }	
 		PlaceAIAtPatrolPoint(LastRecord.AISection, -1);
 	}
+
+	if (!LastRecord.LastCheckpoint.IsValid())
+		return;
 
 	if (PlayerCharacter)
 	{

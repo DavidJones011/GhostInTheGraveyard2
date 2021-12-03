@@ -20,8 +20,10 @@
 #include "Perception/AISense_Hearing.h"
 #include "Dialogue/DialogueUserWidget.h"
 #include "Components/InventoryComponent.h"
-#include "DrawDebugHelpers.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Gizmos/Trap.h"
+#include "InteractionWidget.h"
+#include "Components/HeadBobComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -44,6 +46,9 @@ ASurvivorCharacter::ASurvivorCharacter(const FObjectInitializer& ObjectInitializ
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
 
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory Component"));
+	GetCharacterMovement()->bApplyGravityWhileJumping = false;
+
+	HeadBobComponent = CreateDefaultSubobject<UHeadBobComponent>(TEXT("HeadBob Component"));
 }
 
 //TODO: Implemented this way for now, but should change in the future to fit the games design
@@ -69,8 +74,6 @@ bool ASurvivorCharacter::CanBeSeenFrom(const FVector& ObserverLocation, FVector&
 			OutSightStrength = 1.0F;
 			bSuccess = true;
 		}
-
-
 	}
 
 	return bSuccess;
@@ -89,11 +92,27 @@ void ASurvivorCharacter::BeginPlay()
 		Director->RegisterPlayer(this);
 
 		// create the dialogue widget
-		if (IsPlayerControlled() && DialogueWidgetClass)
+		if (IsPlayerControlled())
 		{
-			DialogueWidget = Cast<UDialogueUserWidget>(CreateWidget(Cast<APlayerController>(GetController()), DialogueWidgetClass));
-			DialogueWidget->AddToViewport();
-			DialogueWidget->SetVisibility(ESlateVisibility::Hidden);
+			if (DialogueWidgetClass)
+			{
+				DialogueWidget = Cast<UDialogueUserWidget>(CreateWidget(GetWorld(), DialogueWidgetClass));
+				if(DialogueWidget)
+				{
+					DialogueWidget->AddToViewport();
+					DialogueWidget->SetVisibility(ESlateVisibility::Hidden);
+				}
+			}
+			
+			if (InteractWidgetClass)
+			{
+				InteractWidget = Cast<UInteractionWidget>(CreateWidget(GetWorld(), InteractWidgetClass));
+				if (InteractWidget)
+				{
+					InteractWidget->AddToViewport();
+					InteractWidget->SetVisibility(ESlateVisibility::Hidden);
+				}
+			}
 		}
 	}
 }
@@ -122,9 +141,9 @@ void ASurvivorCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	// We have 2 versions of the rotation bindings to handle different kinds of devices differently
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
 	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
-	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
+	PlayerInputComponent->BindAxis("Turn", this, &ASurvivorCharacter::Turn);
 	PlayerInputComponent->BindAxis("TurnRate", this, &ASurvivorCharacter::TurnAtRate);
-	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+	PlayerInputComponent->BindAxis("LookUp", this, &ASurvivorCharacter::Lookup);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &ASurvivorCharacter::LookUpAtRate);
 }
 
@@ -136,7 +155,7 @@ void ASurvivorCharacter::OnResetVR()
 void ASurvivorCharacter::Tick(float DeltaSeconds) {
 
 
-	if (!Hidden && !Trapped) {
+	/*if (!Hidden && !Trapped) {
 		FHitResult hit;
 		FVector end = this->GetActorLocation() + this->GetActorForwardVector() * 500;
 		FCollisionObjectQueryParams params = FCollisionObjectQueryParams(ECollisionChannel::ECC_WorldDynamic);
@@ -156,13 +175,62 @@ void ASurvivorCharacter::Tick(float DeltaSeconds) {
 			}
 
 		}
+	}*/
+
+	if (Hidden || Trapped)
+		return;
+
+	FVector Start = GetFirstPersonCameraComponent()->GetComponentLocation();
+	FVector End = Start + GetFirstPersonCameraComponent()->GetForwardVector() * 500.0F;
+	FHitResult Hit;
+	FCollisionQueryParams QueryParams = FCollisionQueryParams("Interact", false, this);
+	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECollisionChannel::ECC_WorldDynamic, QueryParams);
+
+	if (bHit)
+	{
+		IInteractable* Interactable = Cast<IInteractable>(Hit.Actor);
+		if (Interactable && Interactable->CanInteract(this))
+		{
+			if (InteractWidget && currentInteract != Interactable)
+			{
+				InteractWidget->SetInteractMessage(FText::FromString(Interactable->GetInteractionMessage(this)));
+				InteractWidget->SetVisibility(ESlateVisibility::Visible);
+			}
+
+			CanInteract = true;
+			currentInteract = Interactable;
+		}
+		else
+		{
+			if (InteractWidget && currentInteract)
+			{
+				InteractWidget->SetVisibility(ESlateVisibility::Hidden);
+			}
+			CanInteract = false;
+			currentInteract = nullptr;
+		}
 	}
-
+	else if (Trapped && InteractWidget) 
+	{
+		InteractWidget->SetInteractMessage(FText::FromString(currentInteract->GetInteractionMessage(this)));
+		InteractWidget->SetVisibility(ESlateVisibility::Visible);
+	} 
+	else
+	{
+		if (InteractWidget && currentInteract)
+		{
+			InteractWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
+		CanInteract = false;
+		currentInteract = nullptr;
+	}
 }
-
 
 void ASurvivorCharacter::MoveForward(float Value)
 {
+	if (GetInteractingDialogueActor())
+		return;
+
 	if (Value != 0.0f)
 	{
 		// add movement in that direction
@@ -173,6 +241,9 @@ void ASurvivorCharacter::MoveForward(float Value)
 
 void ASurvivorCharacter::MoveRight(float Value)
 {
+	if (GetInteractingDialogueActor())
+		return;
+
 	if (Value != 0.0f)
 	{
 		// add movement in that direction
@@ -181,14 +252,34 @@ void ASurvivorCharacter::MoveRight(float Value)
 	}
 }
 
+void ASurvivorCharacter::Turn(float Val)
+{
+	if (GetInteractingDialogueActor())
+		return;
+
+	AddControllerYawInput(Val);
+}
+
+void ASurvivorCharacter::Lookup(float Val)
+{
+	if (GetInteractingDialogueActor())
+		return;
+
+	AddControllerPitchInput(Val);
+}
+
 void ASurvivorCharacter::TurnAtRate(float Rate)
 {
+	if (GetInteractingDialogueActor())
+		return;
 	// calculate delta for this frame from the rate information
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 }
 
 void ASurvivorCharacter::LookUpAtRate(float Rate)
 {
+	if (GetInteractingDialogueActor())
+		return;
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
@@ -199,9 +290,13 @@ void ASurvivorCharacter::Interact()
 	if (currentInteract) {
 		//if (GEngine)
 			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Interacting"));
+		if (InteractWidget)
+		{
+			InteractWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
+
 		currentInteract->Interact(this);
 	}
-
 }
 
 void ASurvivorCharacter::EndInteract()
@@ -211,37 +306,45 @@ void ASurvivorCharacter::EndInteract()
 	}
 }
 
-
 bool ASurvivorCharacter::Hide(AHidingSpot* spot)
 {
 	if (!Hidden) {
 		Hidden = true;
 		GetController()->SetIgnoreMoveInput(true);
 		GetController()->StopMovement();
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 		SetActorLocation(spot->hidingPoint->GetComponentLocation());
-		FirstPersonCameraComponent->SetRelativeLocation(cameraHidePosition);
-		currentInteract = spot;
+		FirstPersonCameraComponent->AddLocalOffset(-cameraNormalPosition);
+		HeadBobComponent->SetCameraRelativeLocationStart(FirstPersonCameraComponent->GetRelativeLocation());
+
 		return true;
 	} else {
 		return false;
 	}
-
-
 }
+
 void ASurvivorCharacter::Leave(AHidingSpot* spot) {
 	if (Hidden) {
 		GetController()->SetIgnoreMoveInput(false);
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 		SetActorLocation(spot->outPoint->GetComponentLocation());
-		FirstPersonCameraComponent->SetRelativeLocation(cameraNormalPosition);
-		currentInteract = 0;
-		Hidden = false;
+		FirstPersonCameraComponent->AddLocalOffset(cameraNormalPosition);
+		HeadBobComponent->SetCameraRelativeLocationStart(FirstPersonCameraComponent->GetRelativeLocation());
+		currentInteract = nullptr;
 	}
 }
 
 bool ASurvivorCharacter::Trap(ATrap* trap) {
 	if (!Trapped) {
 		GetController()->SetIgnoreMoveInput(true);
-		currentInteract = trap;
+		UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement();
+		if (CharacterMovementComponent)
+		{
+			CharacterMovementComponent->SetMovementMode(EMovementMode::MOVE_None);
+			SetActorLocation(trap->GetActorLocation() + FVector::UpVector * GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+		}
+
+		currentInteract = (IInteractable*) trap;
 		Trapped = true;
 		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 1.0, this, 0.0f);
 
@@ -255,6 +358,11 @@ bool ASurvivorCharacter::Trap(ATrap* trap) {
 void ASurvivorCharacter::EscapeTrap(ATrap* trap) {
 	if (Trapped) {
 		GetController()->SetIgnoreMoveInput(false);
+		UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement();
+		if (CharacterMovementComponent)
+		{
+			CharacterMovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
+		}
 		currentInteract = 0;
 		Trapped = false;
 	}
@@ -263,9 +371,37 @@ void ASurvivorCharacter::EscapeTrap(ATrap* trap) {
 void ASurvivorCharacter::Jump() {
 	if (!Hidden && !Trapped) {
 		Super::Jump();
+		if (HeadBobComponent)
+		{
+			HeadBobComponent->PlayAdditiveCurve("Jump");
+		}
 	}
+}
+
+void ASurvivorCharacter::NotifyJumpApex()
+{
+	Super::NotifyJumpApex();
+}
+
+void ASurvivorCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+	if(HeadBobComponent)
+		HeadBobComponent->PlayAdditiveCurve("Land");
 }
 
 void ASurvivorCharacter::Kill() {
 	GetController()->SetIgnoreMoveInput(true);
+	if (Trapped)
+	{
+		GetController()->SetIgnoreMoveInput(false);
+		UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement();
+		if (CharacterMovementComponent)
+		{
+			CharacterMovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
+		}
+		currentInteract = 0;
+		Trapped = false;
+	}
 }

@@ -11,6 +11,11 @@ class GHOSTINTHEGRAVEYARD_API ACreatureCharacter : public AGhostInTheGraveyardCh
 {
 	GENERATED_BODY()
 
+private:
+
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Audio", meta = (AllowPrivateAccess = "true"))
+	UAudioComponent* AudioComponent = nullptr;
+
 public:
 	// Sets default values for this character's properties
 	ACreatureCharacter(const FObjectInitializer& ObjectInitializer);
@@ -27,5 +32,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	bool CheckForActorInFront(float Distance, FHitResult& OutResult);
+
+	UFUNCTION(BlueprintCallable)
+	UAudioComponent* GetAudioComponent() const { return AudioComponent; }
 
 };

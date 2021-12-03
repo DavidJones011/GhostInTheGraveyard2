@@ -3,6 +3,7 @@
 
 #include "Gizmos/Trap.h"
 #include "Components/BoxComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ATrap::ATrap()
@@ -38,7 +39,8 @@ void ATrap::Tick(float DeltaTime)
 
 	if (escaping) {
 		escapeProgress += DeltaTime;
-		if (escapeProgress >= 5.0) {
+		if (escapeProgress >= TimeToDisableTrap) {
+			if (DisableSound) UGameplayStatics::PlaySoundAtLocation(GetWorld(), DisableSound, GetActorLocation(), 1.0f);
 			trappedPlayer->EscapeTrap(this);
 			disabled = true;
 			SetActorHiddenInGame(true);
@@ -51,8 +53,6 @@ void ATrap::Tick(float DeltaTime)
 
 void ATrap::Interact(ASurvivorCharacter* player) {
 	if (trappedPlayer == player) {
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Escaping"));
 		escaping = true;
 	}
 }
@@ -61,8 +61,6 @@ void ATrap::EndInteract(ASurvivorCharacter* player) {
 		Destroy();
 	}
 	else if (trappedPlayer == player) {
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Don't give up"));
 		escaping = false;
 		escapeProgress = 0;
 	}
@@ -71,6 +69,11 @@ bool ATrap::CanInteract(ASurvivorCharacter* player) {
 	return player == trappedPlayer;
 }
 
+FString ATrap::GetInteractionMessage(ASurvivorCharacter* player) {
+	return FString("Press F to Escape Trap");
+}
+
+
 void ATrap::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Trapped"));
@@ -78,6 +81,9 @@ void ATrap::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AAct
 	ASurvivorCharacter* player = Cast<ASurvivorCharacter>(OtherActor);
 
 	if (player) {
+
+		if(TrapSound) UGameplayStatics::PlaySoundAtLocation(GetWorld(), TrapSound, GetActorLocation(), 1.0f);
+		if (TrapCamShake) UGameplayStatics::PlayWorldCameraShake(GetWorld(), TrapCamShake, GetActorLocation(), 0.0F, 1500.0F, 0.5F);
 		player->Trap(this);
 		trappedPlayer = player;
 		this->Trap(player);

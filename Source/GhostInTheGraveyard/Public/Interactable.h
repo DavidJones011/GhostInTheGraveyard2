@@ -31,5 +31,6 @@ public:
 	virtual void EndInteract(ASurvivorCharacter* player) {};
 	UFUNCTION(BlueprintCallable)
 	virtual bool CanInteract(ASurvivorCharacter* player) { return true; }
-
+	UFUNCTION(BlueprintCallable)
+	virtual FString GetInteractionMessage(ASurvivorCharacter* player) { return FString(); }
 };

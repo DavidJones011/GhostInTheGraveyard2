@@ -38,10 +38,10 @@ int32 UInventoryComponent::AddItem(FName ItemName, int32 Count /* = 1*/)
 			AdjustedCount = ItemData->MaxCapacity - InventorySlot.Count;
 		}
 
-		if (GEngine)
+		/*if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 1.0F, FColor::Blue, FString::Printf(TEXT("Added %s x%d times."), &ItemName, AdjustedCount));
-		}
+		}*/
 
 		InventorySlot.Count += AdjustedCount;
 		ItemCount += AdjustedCount;
@@ -66,10 +66,10 @@ int32 UInventoryComponent::RemoveItem(FName ItemName, int32 Count /*= 1*/)
 		DifferentItemCount--;
 	}
 
-	if (GEngine)
+	/*if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 1.0F, FColor::Red, FString::Printf(TEXT("Removed %s x%d times."), &ItemName, AdjustedRemoveCount));
-	}
+	}*/
 
 	if(InventorySlot->Count == AdjustedRemoveCount)
 		Inventory.Remove(ItemName);
