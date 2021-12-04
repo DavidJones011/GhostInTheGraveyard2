@@ -62,8 +62,15 @@ public:
 	UPROPERTY(BlueprintReadWrite);
 	ASurvivorCharacter* trappedPlayer;
 
-	UFUNCTION(BluePrintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent)
 	void Trap(ASurvivorCharacter* player);
+
+	UFUNCTION(BlueprintCallable)
+	void EngageTrap(ASurvivorCharacter* player) {Trap(player);}
+
+	UFUNCTION(BlueprintNativeEvent)
+	void ResetTrap();
+	virtual void ResetTrap_Implementation(){ trappedPlayer = nullptr; }
 
 
 public:

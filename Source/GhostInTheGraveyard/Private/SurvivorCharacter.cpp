@@ -24,6 +24,7 @@
 #include "Gizmos/Trap.h"
 #include "InteractionWidget.h"
 #include "Components/HeadBobComponent.h"
+#include "AI/AIStrings.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -235,7 +236,7 @@ void ASurvivorCharacter::MoveForward(float Value)
 	{
 		// add movement in that direction
 		AddMovementInput(GetActorForwardVector(), Value);
-		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 0.5, this, 200.0f);
+		//UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 0.5, this, 600.0f, FAIPerceptionTags::NoiseTag);
 	}
 }
 
@@ -248,7 +249,7 @@ void ASurvivorCharacter::MoveRight(float Value)
 	{
 		// add movement in that direction
 		AddMovementInput(GetActorRightVector(), Value);
-		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 0.5, this, 100.0f);
+		//UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 0.5, this, 600.0f, FAIPerceptionTags::NoiseTag);
 	}
 }
 
@@ -332,6 +333,7 @@ void ASurvivorCharacter::Leave(AHidingSpot* spot) {
 		HeadBobComponent->SetCameraRelativeLocationStart(FirstPersonCameraComponent->GetRelativeLocation());
 		currentInteract = nullptr;
 	}
+	Hidden = false;
 }
 
 bool ASurvivorCharacter::Trap(ATrap* trap) {
@@ -346,7 +348,7 @@ bool ASurvivorCharacter::Trap(ATrap* trap) {
 
 		currentInteract = (IInteractable*) trap;
 		Trapped = true;
-		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 1.0, this, 0.0f);
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 1.0, this, 0.0f, FAIPerceptionTags::DistinctNoiseTag);
 
 		return true;
 	}

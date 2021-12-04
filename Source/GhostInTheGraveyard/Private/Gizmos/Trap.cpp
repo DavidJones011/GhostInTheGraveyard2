@@ -29,7 +29,7 @@ ATrap::ATrap()
 void ATrap::BeginPlay()
 {
 	Super::BeginPlay();
-	collider->OnComponentBeginOverlap.AddDynamic(this, &ATrap::OnOverlapBegin);
+	//collider->OnComponentBeginOverlap.AddDynamic(this, &ATrap::OnOverlapBegin);
 }
 
 // Called every frame
@@ -47,6 +47,11 @@ void ATrap::Tick(float DeltaTime)
 			SetActorEnableCollision(false);
 			SetActorTickEnabled(false);
 		}
+	}
+
+	if (trappedPlayer && trappedPlayer->Trapped == false)
+	{
+		ResetTrap();
 	}
 
 }
@@ -70,26 +75,33 @@ bool ATrap::CanInteract(ASurvivorCharacter* player) {
 }
 
 FString ATrap::GetInteractionMessage(ASurvivorCharacter* player) {
-	return FString("Press F to Escape Trap");
+	return FString("Hold F to Escape Trap");
 }
 
 
 void ATrap::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Trapped"));
+// 	if (GEngine)
+// 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Trapped"));
+// 
+// 	ASurvivorCharacter* player = Cast<ASurvivorCharacter>(OtherActor);
+// 
+// 	if (player) {
+// 
+// 		if(TrapSound) UGameplayStatics::PlaySoundAtLocation(GetWorld(), TrapSound, GetActorLocation(), 1.0f);
+// 		if (TrapCamShake) UGameplayStatics::PlayWorldCameraShake(GetWorld(), TrapCamShake, GetActorLocation(), 0.0F, 1500.0F, 0.5F);
+// 		player->Trap(this);
+// 		trappedPlayer = player;
+// 		this->Trap(player);
+// 	}
+}
 
-	ASurvivorCharacter* player = Cast<ASurvivorCharacter>(OtherActor);
-
-	if (player) {
-
-		if(TrapSound) UGameplayStatics::PlaySoundAtLocation(GetWorld(), TrapSound, GetActorLocation(), 1.0f);
+void ATrap::Trap_Implementation(ASurvivorCharacter* player) 
+{
+	if (player) 
+	{
+		if (TrapSound) UGameplayStatics::PlaySoundAtLocation(GetWorld(), TrapSound, GetActorLocation(), 1.0f);
 		if (TrapCamShake) UGameplayStatics::PlayWorldCameraShake(GetWorld(), TrapCamShake, GetActorLocation(), 0.0F, 1500.0F, 0.5F);
 		player->Trap(this);
 		trappedPlayer = player;
-		this->Trap(player);
 	}
-}
-
-void ATrap::Trap_Implementation(ASurvivorCharacter* player) {
-
 }
