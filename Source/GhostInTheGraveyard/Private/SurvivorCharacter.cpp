@@ -87,6 +87,9 @@ void ASurvivorCharacter::BeginPlay()
 	// Call the base class
 	Super::BeginPlay();
 
+	StepRate = WalkStepRate;
+	StepTimer = StepRate;
+
 	UWorld* World = GetWorld();
 	if (World)
 	{
@@ -132,6 +135,10 @@ void ASurvivorCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASurvivorCharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
+	//Bind sprint events
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ASurvivorCharacter::StartSprint);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ASurvivorCharacter::StopSprint);
+
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ASurvivorCharacter::OnResetVR);
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASurvivorCharacter::Interact);
 	PlayerInputComponent->BindAction("Interact", IE_Released, this, &ASurvivorCharacter::EndInteract);
@@ -157,29 +164,65 @@ void ASurvivorCharacter::OnResetVR()
 
 void ASurvivorCharacter::Tick(float DeltaSeconds) {
 
+	// update foot step sounds
 
-	/*if (!Hidden && !Trapped) {
-		FHitResult hit;
-		FVector end = this->GetActorLocation() + this->GetActorForwardVector() * 500;
-		FCollisionObjectQueryParams params = FCollisionObjectQueryParams(ECollisionChannel::ECC_WorldDynamic);
-
-		GetWorld()->LineTraceSingleByObjectType(hit, this->GetActorLocation(), end, params);
-
-		if (hit.IsValidBlockingHit()) {
-			IInteractable* interact = Cast<IInteractable>(hit.Actor);
-			if (interact && interact->CanInteract(this)) {
-				CanInteract = true;
-				currentInteract = interact;
-
+	if (GetCharacterMovement())
+	{
+		//update sprinting
+		if (bSprinting)
+		{
+			FVector LastInput = GetCharacterMovement()->GetLastInputVector();
+			float SprintDot = GetActorForwardVector() | LastInput;
+			if (SprintDot > 0.7F && !bLastFrameSprinting)
+			{
+				GetCharacterMovement()->MaxWalkSpeed = 600.0F;
 			}
-			else {
-				CanInteract = false;
-				currentInteract = 0;
+			else if(SprintDot <= 0.7F && bLastFrameSprinting)
+			{
+				GetCharacterMovement()->MaxWalkSpeed = 400.0F;
 			}
-
 		}
-	}*/
+		else if(!bSprinting && bLastFrameSprinting)
+		{
+			GetCharacterMovement()->MaxWalkSpeed = 400.0F;
+		}
+		bLastFrameSprinting = bSprinting;
 
+		// foot step sounds
+		if (GetCharacterMovement()->IsMovingOnGround() && GetCharacterMovement()->Velocity.SizeSquared() > 0.0F)
+		{
+			StepTimer -= DeltaSeconds;
+			if (StepTimer <= 0.0F)
+			{
+				StepTimer += StepRate;
+				float SoundRange = bSprinting ? 700.0F : 400.0F;
+				float Loudness = bSprinting ? 0.7F : 0.5F;
+				float Volume = bSprinting ? 0.45F : 0.25F;
+				UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), Loudness, this, SoundRange, FAIPerceptionTags::NoiseTag);
+				if (FootStepSounds.Num() > 0)
+				{
+					int32 Index = FMath::FRandRange(0, FootStepSounds.Num() - 1);
+
+					// reduce the chance of hearing the same footstep multiple times in a row
+					if (PrevFootStepIndexTaken == Index)
+					{
+						Index = FMath::FRandRange(0, FootStepSounds.Num() - 1);
+					}
+
+					USoundBase* FoostepSound = FootStepSounds[Index];
+					UGameplayStatics::PlaySound2D(GetWorld(), FoostepSound, Volume);
+					PrevFootStepIndexTaken = Index;
+				}
+			}
+		}
+		else
+		{
+			StepTimer = StepRate;
+		}
+	}
+
+
+	// update interaction
 	if (Hidden || Trapped)
 		return;
 
@@ -410,6 +453,13 @@ void ASurvivorCharacter::Landed(const FHitResult& Hit)
 
 	if(HeadBobComponent)
 		HeadBobComponent->PlayAdditiveCurve("Land");
+
+	UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 0.8F, this, 600.0F, FAIPerceptionTags::NoiseTag);
+	if (FootStepSounds.Num() > 0)
+	{
+		USoundBase* FoostepSound = FootStepSounds[FMath::FRandRange(0, FootStepSounds.Num() - 1)];
+		UGameplayStatics::PlaySound2D(GetWorld(), FoostepSound, 0.6F);
+	}
 }
 
 void ASurvivorCharacter::Kill() {

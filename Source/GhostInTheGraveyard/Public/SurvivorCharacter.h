@@ -26,9 +26,20 @@ public:
 private:
 	
 	UPROPERTY(EditAnywhere)
-	FVector cameraNormalPosition = FVector(0.0f,0.0f, 90.0f);
-
+	FVector cameraNormalPosition = FVector(0.0f,0.0f, 70.0f);
 	const FVector cameraHidePosition = FVector(0.0f, 0.0f, 0.0f);
+
+	UPROPERTY(Transient)
+	bool bSprinting = false;
+
+	UPROPERTY(Transient)
+	bool bLastFrameSprinting = false;
+
+	UPROPERTY(Transient)
+	float StepRate = 0.0F;
+
+	UPROPERTY(Transient)
+	float StepTimer = 0.0F;
 	
 	/** First person camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -78,6 +89,18 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Interact")
 	TSubclassOf<UUserWidget> InteractWidgetClass;
 
+	UPROPERTY(EditAnywhere)
+	float WalkStepRate = 0.5F;
+
+	UPROPERTY(EditAnywhere)
+	float SprintStepRate = 0.3F;
+
+	UPROPERTY(Transient)
+	int32 PrevFootStepIndexTaken = -1;
+
+	UPROPERTY(EditAnywhere)
+	TArray<USoundBase*> FootStepSounds;
+
 protected:
 
 	virtual void Tick(float deltaSeconds) override;
@@ -92,6 +115,18 @@ protected:
 
 	/** Handles stafing movement, left and right */
 	void MoveRight(float Val);
+
+	void StartSprint() 
+	{ 
+		bSprinting = true;
+		StepRate = SprintStepRate;
+	}
+
+	void StopSprint() 
+	{ 
+		bSprinting = false;
+		StepRate = WalkStepRate;
+	}
 
 	void Turn(float Val);
 
@@ -114,10 +149,7 @@ protected:
 	// End of APawn interface
 
 
-
-
 public: 
-
 
 	// Hiding
 	bool Hide(AHidingSpot* spot);

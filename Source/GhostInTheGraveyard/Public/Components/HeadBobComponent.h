@@ -47,8 +47,14 @@ protected:
 	UPROPERTY(EditAnywhere)
 	UCurveVector* WalkCurve;
 
+	UPROPERTY(EditAnywhere)
+	UCurveVector* SprintCurve;
+
 	UPROPERTY(Transient)
 	UCurveVector* CurrentAdditiveCurve;
+
+	UPROPERTY(EditAnywhere)
+	float SprintToleranceSquared = 170000.0F;
 
 	virtual FVector StepVectorCurve(const UCurveVector* InCurve, float DeltaTime, bool bLoop = true);
 

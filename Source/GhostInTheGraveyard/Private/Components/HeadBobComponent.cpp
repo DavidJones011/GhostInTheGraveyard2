@@ -15,7 +15,6 @@ UHeadBobComponent::UHeadBobComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-
 // Called when the game starts
 void UHeadBobComponent::BeginPlay()
 {
@@ -27,7 +26,6 @@ void UHeadBobComponent::BeginPlay()
 		CameraRelativeLocationStart = Camera->GetRelativeLocation();
 	}
 }
-
 
 FVector UHeadBobComponent::StepVectorCurve(const UCurveVector* InCurve, float DeltaTime, bool bLoop /*= true*/)
 {
@@ -78,9 +76,18 @@ void UHeadBobComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 	UCharacterMovementComponent* CharacterMovementComponent = Cast<ACharacter>(GetOwner())->GetCharacterMovement();
 	FVector TargetRelativeLocation = FVector::ZeroVector;
 
-	if (CharacterMovementComponent->GetLastUpdateVelocity().SizeSquared() > 0.0F && CharacterMovementComponent->MovementMode == EMovementMode::MOVE_Walking)
+	float SpeedSquared = CharacterMovementComponent->GetLastUpdateVelocity().SizeSquared();
+
+	if (SpeedSquared > 0.0F && CharacterMovementComponent->MovementMode == EMovementMode::MOVE_Walking)
 	{
-		TargetRelativeLocation = StepVectorCurve(WalkCurve, DeltaTime, true);
+		if (SpeedSquared < SprintToleranceSquared)
+		{
+			TargetRelativeLocation = StepVectorCurve(WalkCurve, DeltaTime, true);
+		}
+		else
+		{
+			TargetRelativeLocation = StepVectorCurve(SprintCurve, DeltaTime, true);
+		}
 	}
 	else
 	{
@@ -97,7 +104,12 @@ void UHeadBobComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 
 void UHeadBobComponent::PlayAdditiveCurve(const FName& Name)
 {
-	CurrentAdditiveCurve = *AdditiveCurves.Find(Name);
+	UCurveVector** Value = AdditiveCurves.Find(Name);
+
+	if(!Value)
+		return;
+
+	CurrentAdditiveCurve = *Value;
 	if(!CurrentAdditiveCurve)
 		return;
 
