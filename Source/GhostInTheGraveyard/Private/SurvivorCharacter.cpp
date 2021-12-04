@@ -25,6 +25,8 @@
 #include "InteractionWidget.h"
 #include "Components/HeadBobComponent.h"
 #include "AI/AIStrings.h"
+#include "Components/DialogueComponent.h"
+#include "Dialogue/DialogueActor.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -182,7 +184,7 @@ void ASurvivorCharacter::Tick(float DeltaSeconds) {
 		return;
 
 	FVector Start = GetFirstPersonCameraComponent()->GetComponentLocation();
-	FVector End = Start + GetFirstPersonCameraComponent()->GetForwardVector() * 500.0F;
+	FVector End = Start + GetFirstPersonCameraComponent()->GetForwardVector() * 300.0F;
 	FHitResult Hit;
 	FCollisionQueryParams QueryParams = FCollisionQueryParams("Interact", false, this);
 	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECollisionChannel::ECC_WorldDynamic, QueryParams);
@@ -287,15 +289,13 @@ void ASurvivorCharacter::LookUpAtRate(float Rate)
 
 void ASurvivorCharacter::Interact()
 {
-
 	if (currentInteract) {
 		//if (GEngine)
 			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Interacting"));
-		if (InteractWidget)
+		if (InteractWidget && !(Trapped || Hidden))
 		{
 			InteractWidget->SetVisibility(ESlateVisibility::Hidden);
 		}
-
 		currentInteract->Interact(this);
 	}
 }
@@ -315,8 +315,14 @@ bool ASurvivorCharacter::Hide(AHidingSpot* spot)
 		GetController()->StopMovement();
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 		SetActorLocation(spot->hidingPoint->GetComponentLocation());
-		FirstPersonCameraComponent->AddLocalOffset(-cameraNormalPosition);
+		FirstPersonCameraComponent->SetRelativeLocation(cameraHidePosition);
 		HeadBobComponent->SetCameraRelativeLocationStart(FirstPersonCameraComponent->GetRelativeLocation());
+
+		if (InteractWidget)
+		{
+			InteractWidget->SetInteractMessage(FText::FromString("Press F to Leave"));
+			InteractWidget->SetVisibility(ESlateVisibility::Visible);
+		}
 
 		return true;
 	} else {
@@ -329,9 +335,14 @@ void ASurvivorCharacter::Leave(AHidingSpot* spot) {
 		GetController()->SetIgnoreMoveInput(false);
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 		SetActorLocation(spot->outPoint->GetComponentLocation());
-		FirstPersonCameraComponent->AddLocalOffset(cameraNormalPosition);
+		FirstPersonCameraComponent->SetRelativeLocation(cameraNormalPosition);
 		HeadBobComponent->SetCameraRelativeLocationStart(FirstPersonCameraComponent->GetRelativeLocation());
 		currentInteract = nullptr;
+
+		if (InteractWidget)
+		{
+			InteractWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 	Hidden = false;
 }
@@ -345,11 +356,14 @@ bool ASurvivorCharacter::Trap(ATrap* trap) {
 			CharacterMovementComponent->SetMovementMode(EMovementMode::MOVE_None);
 			SetActorLocation(trap->GetActorLocation() + FVector::UpVector * GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
 		}
-
 		currentInteract = (IInteractable*) trap;
 		Trapped = true;
+		if (InteractWidget)
+		{
+			InteractWidget->SetInteractMessage(FText::FromString(trap->GetInteractionMessage(this)));
+			InteractWidget->SetVisibility(ESlateVisibility::Visible);
+		}
 		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 1.0, this, 0.0f, FAIPerceptionTags::DistinctNoiseTag);
-
 		return true;
 	}
 	else {
@@ -367,6 +381,11 @@ void ASurvivorCharacter::EscapeTrap(ATrap* trap) {
 		}
 		currentInteract = 0;
 		Trapped = false;
+
+		if (InteractWidget)
+		{
+			InteractWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 }
 
@@ -403,7 +422,16 @@ void ASurvivorCharacter::Kill() {
 		{
 			CharacterMovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
 		}
+
 		currentInteract = 0;
 		Trapped = false;
+	}
+
+	if (GetInteractingDialogueActor())
+	{
+		if (GetInteractingDialogueActor()->GetDialogueComponent()->ConversationIsRunning())
+		{
+			GetInteractingDialogueActor()->GetDialogueComponent()->ExitConversation();
+		}
 	}
 }

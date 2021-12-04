@@ -75,15 +75,6 @@ void UAIDirectorSubsystem::LoadRecordedState()
 			PlayerCharacter->GetController()->SetIgnoreMoveInput(false);
 			PlayerCharacter->GetController()->SetControlRotation(LastRecord.PlayerRotation);
 		}
-
-
-		if (PlayerCharacter->GetInteractingDialogueActor())
-		{
-			if (PlayerCharacter->GetInteractingDialogueActor()->GetDialogueComponent()->ConversationIsRunning())
-			{
-				PlayerCharacter->GetInteractingDialogueActor()->GetDialogueComponent()->ExitConversation();
-			}
-		}
 	}
 }
 
