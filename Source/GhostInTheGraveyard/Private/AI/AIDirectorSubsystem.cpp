@@ -10,6 +10,8 @@
 #include "Components/DialogueComponent.h"
 #include "Dialogue/DialogueActor.h"
 #include "Runtime/NavigationSystem/Public/NavigationSystem.h"
+#include "Gizmos/CheckpointActor.h"
+#include "Camera/CameraComponent.h"
 
 UAIDirectorSubsystem::UAIDirectorSubsystem()
 : Super()
@@ -20,12 +22,17 @@ UAIDirectorSubsystem::UAIDirectorSubsystem()
 
 }
 
-void UAIDirectorSubsystem::RecordState(AActor* CheckpointActor)
+void UAIDirectorSubsystem::RecordState(ACheckpointActor* CheckpointActor)
 {
+	if (LastRecord.LastCheckpoint.IsValid())
+	{
+		LastRecord.LastCheckpoint->ChangeCheckPointState(ECheckpointState::CPS_VISITED);
+	}
+
 	if (PlayerCharacter)
 	{
 		LastRecord.PlayerLocation = PlayerCharacter->GetActorLocation();
-		LastRecord.PlayerRotation = PlayerCharacter->GetActorRotation();
+		LastRecord.PlayerRotation = PlayerCharacter->GetFirstPersonCameraComponent()->GetComponentRotation();
 	}
 	else
 	{
@@ -45,6 +52,7 @@ void UAIDirectorSubsystem::RecordState(AActor* CheckpointActor)
 	}
 
 	LastRecord.LastCheckpoint = CheckpointActor;
+	CheckpointActor->ChangeCheckPointState(ECheckpointState::CPS_ACTIVE);
 }
 
 void UAIDirectorSubsystem::LoadRecordedState()
@@ -57,16 +65,17 @@ void UAIDirectorSubsystem::LoadRecordedState()
 		PlaceAIAtPatrolPoint(LastRecord.AISection, -1);
 	}
 
-	if (!LastRecord.LastCheckpoint.IsValid())
-		return;
-
 	if (PlayerCharacter)
 	{
 		PlayerCharacter->TeleportTo(LastRecord.PlayerLocation, LastRecord.PlayerRotation);
 		PlayerCharacter->Hidden = false;
 
-		if(PlayerCharacter->GetController())
+		if (PlayerCharacter->GetController() && PlayerCharacter->GetFirstPersonCameraComponent())
+		{
 			PlayerCharacter->GetController()->SetIgnoreMoveInput(false);
+			PlayerCharacter->GetController()->SetControlRotation(LastRecord.PlayerRotation);
+		}
+
 
 		if (PlayerCharacter->GetInteractingDialogueActor())
 		{

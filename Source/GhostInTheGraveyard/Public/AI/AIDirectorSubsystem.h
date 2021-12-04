@@ -10,6 +10,7 @@
 class ASurvivorCharacter;
 class ACreatureAIController;
 class AAIPointContextManager;
+class ACheckpointActor;
 
 USTRUCT(Blueprintable)
 struct FRecordAIState
@@ -28,7 +29,7 @@ struct FRecordAIState
 	UPROPERTY()
 	FVector AICharacterLocation;
 
-	TWeakObjectPtr<AActor> LastCheckpoint;
+	TWeakObjectPtr<ACheckpointActor> LastCheckpoint;
 };
 
 /**
@@ -44,7 +45,7 @@ public:
 	UAIDirectorSubsystem();
 
 	UFUNCTION(BlueprintCallable)
-	void RecordState(AActor* CheckpointActor);
+	void RecordState(ACheckpointActor* CheckpointActor);
 
 	UFUNCTION(BlueprintCallable)
 	void LoadRecordedState();
