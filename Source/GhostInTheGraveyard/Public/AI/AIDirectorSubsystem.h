@@ -50,6 +50,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void LoadRecordedState();
 
+	UFUNCTION(BlueprintCallable)
+	void SetLoadCheckpointEnabled(bool bEnabled) { bCheckpointLoadEnabled = bEnabled; }
+
+	UFUNCTION(BlueprintCallable)
+	bool GetLoadCheckpointEnabled() const { return (bCheckpointLoadEnabled && LastRecord.LastCheckpoint != nullptr); }
+
 	/*
 	* Register the player for the AI director to track.
 	*/
@@ -148,4 +154,7 @@ private:
 
 	UPROPERTY()
 	FRecordAIState LastRecord;
+
+	UPROPERTY(Transient)
+	bool bCheckpointLoadEnabled = true;
 };

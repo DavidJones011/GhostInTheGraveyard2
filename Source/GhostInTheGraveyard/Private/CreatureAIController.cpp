@@ -19,6 +19,7 @@
 #include "Gizmos/BreakableObstacle.h"
 #include "CreatureCharacter.h"
 #include "Components/AudioComponent.h"
+#include "Sound/AmbientSound.h"
 
 ACreatureAIController::ACreatureAIController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -95,6 +96,10 @@ void ACreatureAIController::Tick(float DeltaTime)
 			}
 		}
 	}
+
+	// update hearing
+	CurrentHearingScore -= HearingForgetRate * DeltaTime;
+	CurrentHearingScore = FMath::Clamp<float>(CurrentHearingScore, 0.0F, 100.0F);
 }
 
 void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage)
@@ -113,6 +118,11 @@ void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage
 				GetBlackboardComponent()->SetValueAsObject(FBBKeys::TargetActor, DetectedActor);
 				GetBlackboardComponent()->ClearValue(FBBKeys::TargetLocation);
 
+				if (ChaseMusicSoundActor)
+				{
+					ChaseMusicSoundActor->FadeIn(4.0F, 1.0F);
+				}
+
 				if (FoundAIBark && GetCharacter())
 				{
 					ACreatureCharacter* CreatureCharacter = Cast<ACreatureCharacter>(GetCharacter());
@@ -122,10 +132,6 @@ void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage
 						CreatureCharacter->GetAudioComponent()->Play();
 					}
 				}
-
-				//if (FoundAIBark && GetCharacter()) UGameplayStatics::PlaySoundAtLocation(GetWorld(), FoundAIBark, GetCharacter()->GetActorLocation());
-
-				//GetBlackboardComponent()->ClearValue(FBBKeys::InvestigateState);
 			}
 		}
 		else
@@ -133,15 +139,14 @@ void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage
 			if (TargetActor == DetectedActor && Stage == (uint32)EDetectionStage::Curious)
 			{
 				GetBlackboardComponent()->SetValueAsBool(FBBKeys::PlayerSeen, false);
-				//GetBlackboardComponent()->SetValueAsBool(FBBKeys::ActiveState, ECreatureState::ST_Search);
 				GetBlackboardComponent()->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Patrol);
-
-
 				GetBlackboardComponent()->ClearValue(FBBKeys::TargetActor);
 				GetBlackboardComponent()->SetValueAsVector(FBBKeys::TargetLocation, DetectedActor->GetActorLocation());
-				//BlackboardComponent->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Investigate);
 
-				//if (CuriousAIBark && GetCharacter()) UGameplayStatics::PlaySoundAtLocation(GetWorld(), CuriousAIBark, GetCharacter()->GetActorLocation());
+				if (ChaseMusicSoundActor)
+				{
+					ChaseMusicSoundActor->FadeOut(6.0F, 0.0F);
+				}
 
 				if (CuriousAIBark && GetCharacter())
 				{
@@ -293,6 +298,16 @@ void ACreatureAIController::BeginPlay()
 	{
 		UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
 		Director->RegisterAIController(this);
+
+		TArray<AActor*> SoundActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAmbientSound::StaticClass(), SoundActors);
+		for (AActor* SoundActor : SoundActors)
+		{
+			if (SoundActor->GetFName() == "ChaseMusic")
+			{
+				ChaseMusicSoundActor = Cast<AAmbientSound>(SoundActor);
+			}
+		}
 	}
 }
 
@@ -310,33 +325,68 @@ void ACreatureAIController::OnTargetPerceptionUpdate(AActor* InActor, const FAIS
 		DetectorComponent->SetDetectedActor(InActor, Visibility);
 	}
 
+	if(!GetCharacter())
+		return;
+
 	UBlackboardComponent* BlackboardComponent = GetBlackboardComponent();
-	if (BlackboardComponent && Stimulus.WasSuccessfullySensed())
+	if (BlackboardComponent && Stimulus.WasSuccessfullySensed() && Stimulus.Type == HearingConfig->GetSenseID())
 	{
-		if (BlackboardComponent->GetValueAsBool(FBBKeys::PlayerSeen) == false) // don't care if the player is seen
+		if (Stimulus.Tag == FAIPerceptionTags::DistinctNoiseTag)
 		{
-			if (Stimulus.Tag == FAIPerceptionTags::DistinctNoiseTag)
+			if (BlackboardComponent->GetValueAsBool(FBBKeys::PlayerSeen) == false)
 			{
 				BlackboardComponent->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Investigate);
 				BlackboardComponent->SetValueAsVector(FBBKeys::TargetLocation, Stimulus.StimulusLocation);
-				
-				float CurrentTime = GetWorld()->GetTimeSeconds();
-				if (CurrentTime - LastHeardSound >= AIBarkTimeNeeded)
+ 				PlayHearBark();
+			}
+			else
+			{
+				if (GetDetectorComponent() && GetBlackboardComponent())
+					GetDetectorComponent()->InstantlyDetectActor(Cast<AActor>(GetBlackboardComponent()->GetValueAsObject(FBBKeys::TargetActor)));
+			}
+		}
+		else if (Stimulus.Tag == FAIPerceptionTags::NoiseTag)
+		{
+			float Score = (Stimulus.Strength / (Stimulus.StimulusLocation - Stimulus.ReceiverLocation).Size()) * 50.0F;
+			FHitResult Hit;
+			FCollisionQueryParams QueryParams = FCollisionQueryParams("BlockingSoundCheck", false, GetCharacter());
+			bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Stimulus.ReceiverLocation, Stimulus.StimulusLocation, ECollisionChannel::ECC_WorldDynamic, QueryParams);
+			if(bHit && Hit.bBlockingHit && !Cast<ACharacter>(Hit.Actor)) Score *= 0.5F;
+
+			CurrentHearingScore += Score;
+
+			if (CurrentHearingScore >= 100.0F)
+			{
+				if (BlackboardComponent->GetValueAsBool(FBBKeys::PlayerSeen) == false)
 				{
-					if (HeardAIBark && GetCharacter())
-					{
-						ACreatureCharacter* CreatureCharacter = Cast<ACreatureCharacter>(GetCharacter());
-						if (CreatureCharacter && CreatureCharacter->GetAudioComponent())
-						{
-							CreatureCharacter->GetAudioComponent()->SetSound(HeardAIBark);
-							CreatureCharacter->GetAudioComponent()->Play();
-						}
-						//UGameplayStatics::PlaySoundAtLocation(GetWorld(), HeardAIBark, GetCharacter()->GetActorLocation());
-					}
-					LastHeardSound = CurrentTime;
+					BlackboardComponent->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Investigate);
+					BlackboardComponent->SetValueAsVector(FBBKeys::TargetLocation, Stimulus.StimulusLocation);
+					PlayHearBark();
+				}
+				else
+				{
+					if(GetDetectorComponent() && GetBlackboardComponent())
+						GetDetectorComponent()->InstantlyDetectActor(Cast<AActor>(GetBlackboardComponent()->GetValueAsObject(FBBKeys::TargetActor)));
 				}
 			}
 		}
 	}
 }
 
+void ACreatureAIController::PlayHearBark()
+{
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+	if (CurrentTime - LastHeardSound >= AIBarkTimeNeeded)
+	{
+		if (HeardAIBark && GetCharacter())
+		{
+			ACreatureCharacter* CreatureCharacter = Cast<ACreatureCharacter>(GetCharacter());
+			if (CreatureCharacter && CreatureCharacter->GetAudioComponent())
+			{
+				CreatureCharacter->GetAudioComponent()->SetSound(HeardAIBark);
+				CreatureCharacter->GetAudioComponent()->Play();
+			}
+		}
+		LastHeardSound = CurrentTime;
+	}
+}

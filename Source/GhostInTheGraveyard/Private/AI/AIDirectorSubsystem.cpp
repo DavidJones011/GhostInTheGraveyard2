@@ -52,17 +52,25 @@ void UAIDirectorSubsystem::RecordState(ACheckpointActor* CheckpointActor)
 	}
 
 	LastRecord.LastCheckpoint = CheckpointActor;
-	CheckpointActor->ChangeCheckPointState(ECheckpointState::CPS_ACTIVE);
+
+	if(CheckpointActor)
+		CheckpointActor->ChangeCheckPointState(ECheckpointState::CPS_ACTIVE);
 }
 
 void UAIDirectorSubsystem::LoadRecordedState()
 {
+	if(!bCheckpointLoadEnabled)
+		return;
+
 	if (AIController)
 	{
 		SetAIForgetPlayer();
 		ACharacter* AICharacter = AIController->GetCharacter();
-		if (AICharacter) { AICharacter->TeleportTo(LastRecord.AICharacterLocation, FRotator::ZeroRotator); }	
-		PlaceAIAtPatrolPoint(LastRecord.AISection, -1);
+		if (AICharacter) { AICharacter->TeleportTo(LastRecord.AICharacterLocation, FRotator::ZeroRotator); }
+		if (LastRecord.AISection != -1)
+		{
+			PlaceAIAtPatrolPoint(LastRecord.AISection, -1);
+		}
 	}
 
 	if (PlayerCharacter)
@@ -83,6 +91,7 @@ void UAIDirectorSubsystem::RegisterPlayer(ASurvivorCharacter* Character)
 	if (Character != nullptr && !Character->IsPendingKill())
 	{
 		PlayerCharacter = Character;
+		RecordState(nullptr);
 	}
 }
 

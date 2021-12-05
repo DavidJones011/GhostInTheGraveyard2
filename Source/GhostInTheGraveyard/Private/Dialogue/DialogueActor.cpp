@@ -4,6 +4,7 @@
 #include "Dialogue/DialogueActor.h"
 #include "Components/DialogueComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "AI/AIDirectorSubsystem.h"
 
 // Sets default values
 ADialogueActor::ADialogueActor()
@@ -23,6 +24,12 @@ void ADialogueActor::BeginPlay()
 
 void ADialogueActor::ExitedConversation(ASurvivorCharacter* CharacterInstigator)
 {
+	if (GetWorld())
+	{
+		UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+		if (Director) Director->SetLoadCheckpointEnabled(true);
+	}
+
 	CharacterInstigator->SetInteractingDialogueActor(nullptr);
 	CharacterInstigator->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 	CharacterInstigator->currentInteract = nullptr;
@@ -46,6 +53,12 @@ void ADialogueActor::Interact(ASurvivorCharacter* player)
 	}
 	else
 	{
+		if (GetWorld())
+		{
+			UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+			if (Director) Director->SetLoadCheckpointEnabled(false);
+		}
+
 		player->SetInteractingDialogueActor(this);
 		player->GetCharacterMovement()->StopMovementImmediately();
 		player->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);

@@ -23,10 +23,12 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Gizmos/Trap.h"
 #include "InteractionWidget.h"
+#include "GameMenu_UserWidget.h"
 #include "Components/HeadBobComponent.h"
 #include "AI/AIStrings.h"
 #include "Components/DialogueComponent.h"
 #include "Dialogue/DialogueActor.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -74,7 +76,9 @@ bool ASurvivorCharacter::CanBeSeenFrom(const FVector& ObserverLocation, FVector&
 			bSuccess = true;
 		}
 		else {
-			OutSightStrength = 1.0F;
+		
+			float Dist = (ObserverLocation - GetActorLocation()).Size();
+			OutSightStrength = 1.0F - FMath::Min((300.0F / Dist), 1.0F);
 			bSuccess = true;
 		}
 	}
@@ -100,6 +104,9 @@ void ASurvivorCharacter::BeginPlay()
 		// create the dialogue widget
 		if (IsPlayerControlled())
 		{
+			//Cast<APlayerController>(GetController())->SetTickableWhenPaused(true);
+			//SetTickableWhenPaused(true);
+
 			if (DialogueWidgetClass)
 			{
 				DialogueWidget = Cast<UDialogueUserWidget>(CreateWidget(GetWorld(), DialogueWidgetClass));
@@ -119,6 +126,16 @@ void ASurvivorCharacter::BeginPlay()
 					InteractWidget->SetVisibility(ESlateVisibility::Hidden);
 				}
 			}
+
+			if (PauseMenuWidgetClass)
+			{
+				PauseGameWidget = Cast<UGameMenu_UserWidget>(CreateWidget(GetWorld(), PauseMenuWidgetClass));
+				if (PauseGameWidget)
+				{
+					PauseGameWidget->AddToViewport();
+					PauseGameWidget->SetVisibility(ESlateVisibility::Hidden);
+				}
+			}
 		}
 	}
 }
@@ -130,6 +147,9 @@ void ASurvivorCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 {
 	// set up gameplay key bindings
 	check(PlayerInputComponent);
+
+	// Pause Game
+	PlayerInputComponent->BindAction("Pause", IE_Pressed, this, &ASurvivorCharacter::PauseGame);
 
 	// Bind jump events
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASurvivorCharacter::Jump);
@@ -196,7 +216,7 @@ void ASurvivorCharacter::Tick(float DeltaSeconds) {
 			{
 				StepTimer += StepRate;
 				float SoundRange = bSprinting ? 700.0F : 400.0F;
-				float Loudness = bSprinting ? 0.7F : 0.5F;
+				float Loudness = bSprinting ? 600.0F : 300.0F;
 				float Volume = bSprinting ? 0.45F : 0.25F;
 				UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), Loudness, this, SoundRange, FAIPerceptionTags::NoiseTag);
 				if (FootStepSounds.Num() > 0)
@@ -298,6 +318,39 @@ void ASurvivorCharacter::MoveRight(float Value)
 	}
 }
 
+void ASurvivorCharacter::PauseGame()
+{
+	APlayerController* PlayerCont = Cast<APlayerController>(GetController());
+
+	if(!PlayerCont)
+		return;
+	
+	if (!PlayerCont->IsLocalPlayerController())
+		return;
+
+	if (UGameplayStatics::IsGamePaused(GetWorld()))
+	{
+		UGameplayStatics::SetGamePaused(GetWorld(), false);	
+		if (PauseGameWidget)
+		{
+			PauseGameWidget->SetVisibility(ESlateVisibility::Hidden);
+			UWidgetBlueprintLibrary::SetInputMode_GameOnly(PlayerCont);
+			PlayerCont->bShowMouseCursor = false;	
+		}
+	}
+	else
+	{
+		UGameplayStatics::SetGamePaused(GetWorld(), true);
+		if (PauseGameWidget)
+		{
+			PauseGameWidget->SetVisibility(ESlateVisibility::Visible);
+			UWidgetBlueprintLibrary::SetInputMode_GameAndUIEx(PlayerCont, PauseGameWidget, EMouseLockMode::DoNotLock);
+			PauseGameWidget->OnPaused();
+			PlayerCont->bShowMouseCursor = true;
+		}
+	}
+}
+
 void ASurvivorCharacter::Turn(float Val)
 {
 	if (GetInteractingDialogueActor())
@@ -366,8 +419,14 @@ bool ASurvivorCharacter::Hide(AHidingSpot* spot)
 			InteractWidget->SetInteractMessage(FText::FromString("Press F to Leave"));
 			InteractWidget->SetVisibility(ESlateVisibility::Visible);
 		}
-
 		return true;
+
+		if (GetWorld())
+		{
+			UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+			if (Director) Director->SetLoadCheckpointEnabled(false);
+		}
+
 	} else {
 		return false;
 	}
@@ -385,6 +444,12 @@ void ASurvivorCharacter::Leave(AHidingSpot* spot) {
 		if (InteractWidget)
 		{
 			InteractWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
+
+		if (GetWorld())
+		{
+			UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+			if (Director) Director->SetLoadCheckpointEnabled(true);
 		}
 	}
 	Hidden = false;
@@ -407,6 +472,13 @@ bool ASurvivorCharacter::Trap(ATrap* trap) {
 			InteractWidget->SetVisibility(ESlateVisibility::Visible);
 		}
 		UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 1.0, this, 0.0f, FAIPerceptionTags::DistinctNoiseTag);
+
+		if (GetWorld())
+		{
+			UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+			if (Director) Director->SetLoadCheckpointEnabled(false);
+		}
+
 		return true;
 	}
 	else {
@@ -428,6 +500,12 @@ void ASurvivorCharacter::EscapeTrap(ATrap* trap) {
 		if (InteractWidget)
 		{
 			InteractWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
+
+		if (GetWorld())
+		{
+			UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+			if (Director) Director->SetLoadCheckpointEnabled(true);
 		}
 	}
 }
@@ -454,7 +532,7 @@ void ASurvivorCharacter::Landed(const FHitResult& Hit)
 	if(HeadBobComponent)
 		HeadBobComponent->PlayAdditiveCurve("Land");
 
-	UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 0.8F, this, 600.0F, FAIPerceptionTags::NoiseTag);
+	UAISense_Hearing::ReportNoiseEvent(GetWorld(), this->GetActorLocation(), 700.0F, this, 100.0F, FAIPerceptionTags::NoiseTag);
 	if (FootStepSounds.Num() > 0)
 	{
 		USoundBase* FoostepSound = FootStepSounds[FMath::FRandRange(0, FootStepSounds.Num() - 1)];

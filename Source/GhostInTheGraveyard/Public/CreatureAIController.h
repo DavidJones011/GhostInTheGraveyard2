@@ -8,6 +8,7 @@
 #include "CreatureAIController.generated.h"
 
 class USoundBase;
+class AAmbientSound;
 
 UENUM(BlueprintType)
 enum ECreatureState
@@ -30,10 +31,19 @@ class GHOSTINTHEGRAVEYARD_API ACreatureAIController : public AAIController
 private:
 
 	UPROPERTY(Transient)
-	float LastHeardSound = 0.0F;
+	float LastHeardSound = -100.0F;
 
 	UPROPERTY(EditAnywhere)
 	float AIBarkTimeNeeded = 5.0F;
+
+	UPROPERTY(Transient)
+	float CurrentHearingScore = 0.0F;
+
+	UPROPERTY(EditAnywhere)
+	float HearingForgetRate = 10.0F;
+
+	UPROPERTY(EditAnywhere)
+	AAmbientSound* ChaseMusicSoundActor = nullptr;
 
 public:
 
@@ -43,6 +53,8 @@ public:
 
 	// Used for the location and rotation for the Perception Component
 	virtual void GetActorEyesViewPoint(FVector& out_Location, FRotator& out_Rotation) const override;
+
+	virtual void ResetHearingScore() { CurrentHearingScore = 0.0F;}
 
 	// Reports the EQS Query Result
 	virtual void ReportEQSQueryResult(TSharedPtr<struct FEnvQueryResult> Result);
@@ -103,6 +115,8 @@ private:
 
 	UFUNCTION()
 	void OnTargetPerceptionUpdate(AActor* InActor, const FAIStimulus Stimulus);
+
+	void PlayHearBark();
 
 private:
 

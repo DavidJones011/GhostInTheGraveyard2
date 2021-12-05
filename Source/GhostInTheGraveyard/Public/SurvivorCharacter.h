@@ -13,6 +13,7 @@ class UInteractionWidget;
 class ADialogueActor;
 class UInventoryComponent;
 class UHeadBobComponent;
+class UGameMenu_UserWidget;
 
 UCLASS(config = Game)
 class GHOSTINTHEGRAVEYARD_API ASurvivorCharacter : public AGhostInTheGraveyardCharacter, public IAISightTargetInterface
@@ -58,6 +59,9 @@ private:
 	UInteractionWidget* InteractWidget = nullptr;
 
 	UPROPERTY(Transient)
+	UGameMenu_UserWidget* PauseGameWidget = nullptr;
+
+	UPROPERTY(Transient)
 	ADialogueActor* InteractingDialogueActor = nullptr;
 
 public:
@@ -89,6 +93,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Interact")
 	TSubclassOf<UUserWidget> InteractWidgetClass;
 
+	UPROPERTY(EditAnywhere, Category = "PauseMenu")
+	TSubclassOf<UUserWidget> PauseMenuWidgetClass;
+
 	UPROPERTY(EditAnywhere)
 	float WalkStepRate = 0.5F;
 
@@ -115,6 +122,8 @@ protected:
 
 	/** Handles stafing movement, left and right */
 	void MoveRight(float Val);
+
+	void PauseGame();
 
 	void StartSprint() 
 	{ 
