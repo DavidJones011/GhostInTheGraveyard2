@@ -2,6 +2,7 @@
 
 
 #include "Dialogue/GhostActor.h"
+#include "Components/InventoryComponent.h"
 
 // void AGhostActor::Dissapate()
 // {

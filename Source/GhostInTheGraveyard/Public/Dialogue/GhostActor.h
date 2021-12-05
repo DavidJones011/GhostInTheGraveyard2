@@ -6,6 +6,8 @@
 #include "Dialogue/DialogueActor.h"
 #include "GhostActor.generated.h"
 
+class UInventoryComponent;
+
 /**
  * 
  */
