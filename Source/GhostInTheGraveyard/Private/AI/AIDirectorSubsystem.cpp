@@ -12,6 +12,7 @@
 #include "Runtime/NavigationSystem/Public/NavigationSystem.h"
 #include "Gizmos/CheckpointActor.h"
 #include "Camera/CameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 UAIDirectorSubsystem::UAIDirectorSubsystem()
 : Super()
@@ -82,6 +83,13 @@ void UAIDirectorSubsystem::LoadRecordedState()
 		{
 			PlayerCharacter->GetController()->SetIgnoreMoveInput(false);
 			PlayerCharacter->GetController()->SetControlRotation(LastRecord.PlayerRotation);
+
+			PlayerCharacter->GetController()->SetIgnoreMoveInput(false);
+			UCharacterMovementComponent* CharacterMovementComponent = PlayerCharacter->GetCharacterMovement();
+			if (CharacterMovementComponent)
+			{
+				CharacterMovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
+			}
 		}
 	}
 }

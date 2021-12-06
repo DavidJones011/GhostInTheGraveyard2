@@ -29,6 +29,7 @@
 #include "Components/DialogueComponent.h"
 #include "Dialogue/DialogueActor.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Sound/AmbientSound.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -77,8 +78,8 @@ bool ASurvivorCharacter::CanBeSeenFrom(const FVector& ObserverLocation, FVector&
 		}
 		else {
 		
-			float Dist = (ObserverLocation - GetActorLocation()).Size();
-			OutSightStrength = 1.0F - FMath::Min((300.0F / Dist), 1.0F);
+			float Ratio = FMath::Clamp((ObserverLocation - GetActorLocation()).Size() / 4000.0F, 0.0F, 1.0F);
+			OutSightStrength = FMath::Lerp(1.0F, 0.0F, Ratio);
 			bSuccess = true;
 		}
 	}
@@ -134,6 +135,16 @@ void ASurvivorCharacter::BeginPlay()
 				{
 					PauseGameWidget->AddToViewport();
 					PauseGameWidget->SetVisibility(ESlateVisibility::Hidden);
+				}
+			}
+
+			if (DeathMenuWidgetClass)
+			{
+				DeathWidget = Cast<UUserWidget>(CreateWidget(GetWorld(), DeathMenuWidgetClass));
+				if (DeathWidget)
+				{
+					DeathWidget->AddToViewport();
+					DeathWidget->SetVisibility(ESlateVisibility::Hidden);
 				}
 			}
 		}
@@ -419,14 +430,18 @@ bool ASurvivorCharacter::Hide(AHidingSpot* spot)
 			InteractWidget->SetInteractMessage(FText::FromString("Press F to Leave"));
 			InteractWidget->SetVisibility(ESlateVisibility::Visible);
 		}
-		return true;
 
 		if (GetWorld())
 		{
 			UAIDirectorSubsystem* Director = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
-			if (Director) Director->SetLoadCheckpointEnabled(false);
+			if (Director)
+			{
+				Director->SetLoadCheckpointEnabled(false);
+				Director->SetAIForgetPlayer();
+			}
 		}
 
+		return true;
 	} else {
 		return false;
 	}
@@ -542,15 +557,55 @@ void ASurvivorCharacter::Landed(const FHitResult& Hit)
 
 void ASurvivorCharacter::Kill() {
 	GetController()->SetIgnoreMoveInput(true);
+	UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement();
+	if (CharacterMovementComponent)
+	{
+		CharacterMovementComponent->SetMovementMode(EMovementMode::MOVE_None);
+	}
+
+	if (DeathWidget)
+	{
+		APlayerController* PlayerCont = Cast<APlayerController>(GetController());
+		if (PlayerCont)
+		{
+			DeathWidget->SetVisibility(ESlateVisibility::Visible);
+			UWidgetBlueprintLibrary::SetInputMode_UIOnlyEx(PlayerCont, DeathWidget, EMouseLockMode::DoNotLock);
+			PlayerCont->bShowMouseCursor = true;
+
+			// this could be done a lot better, however not enough time
+			TArray<AActor*> SoundActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAmbientSound::StaticClass(), SoundActors);
+			for (AActor* SoundActor : SoundActors)
+			{
+				if (SoundActor->GetFName() == "ChaseMusic")
+				{
+					Cast<AAmbientSound>(SoundActor)->FadeOut(2.0F, 0.0F);
+					break;
+				}
+			}
+		}
+	}
+	else
+	{
+		// in case there is no death screen widget
+		if (GetWorld())
+		{
+			UAIDirectorSubsystem* Subsystem = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+			if (Subsystem)
+			{
+				Subsystem->SetLoadCheckpointEnabled(true);
+				Subsystem->LoadRecordedState();
+			}
+		}
+	}
+
+	if (InteractWidget)
+	{
+		InteractWidget->SetVisibility(ESlateVisibility::Hidden);
+	}
+
 	if (Trapped)
 	{
-		GetController()->SetIgnoreMoveInput(false);
-		UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement();
-		if (CharacterMovementComponent)
-		{
-			CharacterMovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
-		}
-
 		currentInteract = 0;
 		Trapped = false;
 	}

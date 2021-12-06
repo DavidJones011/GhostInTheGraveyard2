@@ -32,16 +32,6 @@ EBTNodeResult::Type UBTTask_KillPlayer::ExecuteTask(UBehaviorTreeComponent& Owne
 				BlackboardComp->ClearValue(BlackboardKey.SelectedKeyName);
 				BlackboardComp->SetValueAsEnum(FBBKeys::ActiveState, ECreatureState::ST_Patrol);
 				BlackboardComp->SetValueAsBool(FBBKeys::PlayerSeen, false);
-				
-				if (GetWorld())
-				{
-					UAIDirectorSubsystem* Subsystem = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
-					if (Subsystem)
-					{
-						Subsystem->LoadRecordedState();
-					}
-				}
-
 				return EBTNodeResult::Succeeded;
 			}
 		}

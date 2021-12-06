@@ -62,6 +62,9 @@ private:
 	UGameMenu_UserWidget* PauseGameWidget = nullptr;
 
 	UPROPERTY(Transient)
+	UUserWidget* DeathWidget = nullptr;
+
+	UPROPERTY(Transient)
 	ADialogueActor* InteractingDialogueActor = nullptr;
 
 public:
@@ -93,8 +96,11 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Interact")
 	TSubclassOf<UUserWidget> InteractWidgetClass;
 
-	UPROPERTY(EditAnywhere, Category = "PauseMenu")
+	UPROPERTY(EditAnywhere, Category = "GameMenu")
 	TSubclassOf<UUserWidget> PauseMenuWidgetClass;
+
+	UPROPERTY(EditAnywhere, Category = "GameMenu")
+	TSubclassOf<UUserWidget> DeathMenuWidgetClass;
 
 	UPROPERTY(EditAnywhere)
 	float WalkStepRate = 0.5F;
