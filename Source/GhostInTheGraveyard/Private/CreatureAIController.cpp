@@ -100,6 +100,30 @@ void ACreatureAIController::Tick(float DeltaTime)
 	// update hearing
 	CurrentHearingScore -= HearingForgetRate * DeltaTime;
 	CurrentHearingScore = FMath::Clamp<float>(CurrentHearingScore, 0.0F, 100.0F);
+
+	//update idle bark
+	if (GetWorld() && IdleBark && BlackboardComponent)
+	{
+		if (BlackboardComponent)
+		{
+			float CurrentTime = GetWorld()->GetTimeSeconds();
+			ECreatureState State = (ECreatureState)(BlackboardComponent->GetValueAsEnum(FBBKeys::ActiveState));
+
+			if (State < (int32)ECreatureState::ST_Pursue)
+			{
+				if (CurrentTime - LastTimeIdleBarkPlayed >= TimeNeededToPlayIdleBark)
+				{
+					ACreatureCharacter* CreatureCharacter = Cast<ACreatureCharacter>(GetCharacter());
+					if (CreatureCharacter && CreatureCharacter->GetAudioComponent())
+					{
+						CreatureCharacter->GetAudioComponent()->SetSound(IdleBark);
+						CreatureCharacter->GetAudioComponent()->Play();
+					}
+					LastTimeIdleBarkPlayed = CurrentTime;
+				}
+			}
+		}
+	}
 }
 
 void ACreatureAIController::OnDetectedUpdate(AActor* DetectedActor, uint32 Stage)

@@ -43,6 +43,12 @@ private:
 	float HearingForgetRate = 10.0F;
 
 	UPROPERTY(EditAnywhere)
+	float TimeNeededToPlayIdleBark = 90.0F;
+
+	UPROPERTY(Transient)
+	float LastTimeIdleBarkPlayed = 0.0F;
+
+	UPROPERTY(EditAnywhere)
 	AAmbientSound* ChaseMusicSoundActor = nullptr;
 
 public:
@@ -107,6 +113,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	USoundBase* HeardAIBark;
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* IdleBark;
 
 private:
 
