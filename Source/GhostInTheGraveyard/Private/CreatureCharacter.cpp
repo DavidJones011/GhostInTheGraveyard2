@@ -20,6 +20,10 @@ ACreatureCharacter::ACreatureCharacter(const FObjectInitializer& ObjectInitializ
 	if (AudioComponent)
 	{
 		AudioComponent->SetupAttachment(RootComponent);
+		FSoundAttenuationSettings AttenuationSettings;
+		AttenuationSettings.bAttenuate = true;
+		AttenuationSettings.FalloffDistance = SoundAttenuationMaxRange;
+		AudioComponent->AdjustAttenuation(AttenuationSettings);
 		AudioComponent->Activate();
 		AudioComponent->bAutoDestroy = false;
 	}

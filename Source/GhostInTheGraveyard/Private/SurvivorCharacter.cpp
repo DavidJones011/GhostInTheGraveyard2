@@ -563,38 +563,36 @@ void ASurvivorCharacter::Kill() {
 		CharacterMovementComponent->SetMovementMode(EMovementMode::MOVE_None);
 	}
 
-	if (DeathWidget)
+	// in case there is no death screen widget
+	EndInteract();
+	if (GetWorld())
 	{
-		APlayerController* PlayerCont = Cast<APlayerController>(GetController());
-		if (PlayerCont)
+		UAIDirectorSubsystem* Subsystem = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
+		if (Subsystem)
+		{
+			Subsystem->SetLoadCheckpointEnabled(true);
+		}
+	}
+
+	APlayerController* PlayerCont = Cast<APlayerController>(GetController());
+	if (PlayerCont)
+	{
+		if (DeathWidget)
 		{
 			DeathWidget->SetVisibility(ESlateVisibility::Visible);
 			UWidgetBlueprintLibrary::SetInputMode_UIOnlyEx(PlayerCont, DeathWidget, EMouseLockMode::DoNotLock);
 			PlayerCont->bShowMouseCursor = true;
-
-			// this could be done a lot better, however not enough time
-			TArray<AActor*> SoundActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAmbientSound::StaticClass(), SoundActors);
-			for (AActor* SoundActor : SoundActors)
-			{
-				if (SoundActor->GetFName() == "ChaseMusic")
-				{
-					Cast<AAmbientSound>(SoundActor)->FadeOut(2.0F, 0.0F);
-					break;
-				}
-			}
 		}
-	}
-	else
-	{
-		// in case there is no death screen widget
-		if (GetWorld())
+
+		// this could be done a lot better, however not enough time
+		TArray<AActor*> SoundActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAmbientSound::StaticClass(), SoundActors);
+		for (AActor* SoundActor : SoundActors)
 		{
-			UAIDirectorSubsystem* Subsystem = GetWorld()->GetSubsystem<UAIDirectorSubsystem>();
-			if (Subsystem)
+			if (SoundActor->GetFName() == "ChaseMusic")
 			{
-				Subsystem->SetLoadCheckpointEnabled(true);
-				Subsystem->LoadRecordedState();
+				Cast<AAmbientSound>(SoundActor)->FadeOut(2.0F, 0.0F);
+				break;
 			}
 		}
 	}

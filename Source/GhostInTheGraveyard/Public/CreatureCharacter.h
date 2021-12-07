@@ -16,6 +16,9 @@ private:
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Audio", meta = (AllowPrivateAccess = "true"))
 	UAudioComponent* AudioComponent = nullptr;
 
+	UPROPERTY(EditAnywhere)
+	float SoundAttenuationMaxRange = 2500.0F;
+
 public:
 	// Sets default values for this character's properties
 	ACreatureCharacter(const FObjectInitializer& ObjectInitializer);
