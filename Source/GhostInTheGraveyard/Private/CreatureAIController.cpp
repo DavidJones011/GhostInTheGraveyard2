@@ -111,16 +111,16 @@ void ACreatureAIController::Tick(float DeltaTime)
 
 			if (State < (int32)ECreatureState::ST_Pursue)
 			{
-				if (CurrentTime - LastTimeIdleBarkPlayed >= TimeNeededToPlayIdleBark)
-				{
+				//if (CurrentTime - LastTimeIdleBarkPlayed >= TimeNeededToPlayIdleBark)
+				//{
 					ACreatureCharacter* CreatureCharacter = Cast<ACreatureCharacter>(GetCharacter());
-					if (CreatureCharacter && CreatureCharacter->GetAudioComponent())
+					if (CreatureCharacter && CreatureCharacter->GetAudioComponent() && !CreatureCharacter->GetAudioComponent()->IsPlaying())
 					{
 						CreatureCharacter->GetAudioComponent()->SetSound(IdleBark);
 						CreatureCharacter->GetAudioComponent()->Play();
 					}
-					LastTimeIdleBarkPlayed = CurrentTime;
-				}
+					//LastTimeIdleBarkPlayed = CurrentTime;
+				//}
 			}
 		}
 	}

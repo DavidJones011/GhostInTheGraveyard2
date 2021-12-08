@@ -160,6 +160,9 @@ public:
 	UFUNCTION()
 	bool TryGetClosestPatrolPointDataFromSection(int32 Section, const FVector& Point, FPatrolPointData& Data);
 
+	UFUNCTION()
+	bool TryGetFarthestPatrolPointDataFromSection(int32 Section, const FVector& Point, FPatrolPointData& Data);
+
 	/**
 	 * Get the number of patrol points in a patrol section.
 	 */

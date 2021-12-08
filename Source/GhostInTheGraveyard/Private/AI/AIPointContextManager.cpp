@@ -280,6 +280,40 @@ bool AAIPointContextManager::TryGetClosestPatrolPointDataFromSection(int32 Secti
 	return false;
 }
 
+bool AAIPointContextManager::TryGetFarthestPatrolPointDataFromSection(int32 Section, const FVector& Point, FPatrolPointData& Data)
+{
+	FPatrolPointData* BestData = nullptr;
+	float BestDistance = 0.0F;
+
+	if (IsValidSection(Section))
+	{
+		const FPatrolSection& SectionData = PatrolSections[Section];
+		for (int32 Index = 0; Index < SectionData.PatrolPoints.Num(); Index++)
+		{
+			const FPatrolPointData* CurrentData = &(SectionData.PatrolPoints[Index]);
+			float DistSquared = FVector::DistSquared(Point, CurrentData->Location);
+			if (DistSquared > BestDistance)
+			{
+				BestDistance = DistSquared;
+				BestData = (FPatrolPointData*)CurrentData;
+			}
+		}
+
+		if (BestData != nullptr)
+		{
+			Data = *BestData;
+			return true;
+		}
+	}
+
+	Data.Index = -1;
+	Data.NextLinkIndex = -1;
+	Data.PriorLinkIndex = -1;
+	Data.Location = FVector::ZeroVector;
+	Data.SectionId = -1;
+	return false;
+}
+
 const TArray<FPatrolPointData>* AAIPointContextManager::GetPatrolPointData(int32 SectionID) const
 {
 	if (PatrolSections.IsValidIndex(SectionID))

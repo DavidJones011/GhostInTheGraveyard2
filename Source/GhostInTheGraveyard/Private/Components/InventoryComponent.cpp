@@ -74,6 +74,7 @@ int32 UInventoryComponent::RemoveItem(FName ItemName, int32 Count /*= 1*/)
 	if(InventorySlot->Count == AdjustedRemoveCount)
 		Inventory.Remove(ItemName);
 
+	InventorySlot->Count -= AdjustedRemoveCount;
 	ItemCount -= AdjustedRemoveCount;
 	return AdjustedRemoveCount;
 }

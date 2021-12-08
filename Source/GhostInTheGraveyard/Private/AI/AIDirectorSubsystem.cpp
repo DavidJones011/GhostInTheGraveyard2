@@ -70,7 +70,7 @@ void UAIDirectorSubsystem::LoadRecordedState()
 		if (AICharacter) { AICharacter->TeleportTo(LastRecord.AICharacterLocation, FRotator::ZeroRotator); }
 		if (LastRecord.AISection != -1)
 		{
-			PlaceAIAtPatrolPoint(LastRecord.AISection, -1);
+			PlaceAIAtPatrolPoint(LastRecord.AISection, -2);
 		}
 	}
 
@@ -218,9 +218,13 @@ void UAIDirectorSubsystem::PlaceAIAtPatrolPoint(int32 Section, int32 Index)
 			{
 				PatrolManager->TryGetPatrolPointData(Index, Section, Data);
 			}
-			else
+			else if(Index == -1)
 			{
 				PatrolManager->TryGetClosestPatrolPointDataFromSection(Section, AICharacter->GetActorLocation(), Data);
+			}
+			else
+			{
+				PatrolManager->TryGetFarthestPatrolPointDataFromSection(Section, AICharacter->GetActorLocation(), Data);
 			}
 
 
