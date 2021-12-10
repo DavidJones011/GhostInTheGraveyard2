@@ -224,7 +224,7 @@ void UAIDirectorSubsystem::PlaceAIAtPatrolPoint(int32 Section, int32 Index)
 			}
 			else
 			{
-				PatrolManager->TryGetFarthestPatrolPointDataFromSection(Section, AICharacter->GetActorLocation(), Data);
+				PatrolManager->TryGetFarthestPatrolPointDataFromSection(Section, PlayerCharacter->GetActorLocation(), Data);
 			}
 
 
